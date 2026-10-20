@@ -1,0 +1,13 @@
+
+prompt:
+build comprehensive documentation storing it into directory docs with necessary nested structure. extract business rules and put them into docs/business, build program documentation and put it into docs/program, build application wiki with index.html in directory docs. build small README.md. store the summary report into reports/00-build-documentation.html
+
+Tools awaiting approval:
+Update Todo List
+Edit
+Explore project structure, modules, and code
+Extract business rules into docs/business
+Build program documentation into docs/program
+Build application wiki with index.html in docs
+Create README.md in project root
+Store summary report in reports/00-build-documentation.html

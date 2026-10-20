@@ -1,0 +1,15 @@
+# Excluded per user instructions
+.bob/
+.bob
+reports/step-by-step.html
+reports/step-by-step.fld/
+reports/step-by-step.fld
+reports/step-by-step.pdf
+reports/~*
+
+# Build artifacts & OS files
+target/
+**/target/
+.DS_Store
+**/.DS_Store
+*.class
