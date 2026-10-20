@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Unit Test Generation Report - DLIS</title>
+  <style>
+    :root {
+      --primary: #0f62fe;
+      --primary-dark: #0043ce;
+      --bg: #f4f4f4;
+      --card-bg: #ffffff;
+      --text: #161616;
+      --text-muted: #525252;
+      --border: #e0e0e0;
+      --success: #24a148;
+      --success-bg: #defbe6;
+      --warn: #8e6a00;
+      --warn-bg: #fcf4d6;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 32px;
+      line-height: 1.5;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    .header {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px 32px;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-info h1 { font-size: 1.4rem; font-weight: 700; }
+    .header-info p { font-size: 0.85rem; color: var(--text-muted); margin-top: 4px; }
+    .badge-status {
+      background: var(--success-bg);
+      color: var(--success);
+      font-weight: 700;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      border: 1px solid #a7f0ba;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary);
+    }
+    .card h3 { font-size: 0.95rem; margin: 16px 0 8px; }
+    .card p, .card li { font-size: 0.9rem; }
+    .card ul, .card ol { margin-left: 22px; }
+    .card li { margin-bottom: 6px; }
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    .kpi {
+      background: #f9fafb;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .kpi .value { font-size: 1.7rem; font-weight: 700; color: var(--primary-dark); }
+    .kpi .label { font-size: 0.78rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { background: #f4f4f4; font-weight: 600; }
+    td.num, th.num { text-align: right; white-space: nowrap; }
+    .bar-cell { width: 38%; }
+    .bar-track { background: #e8eefc; border-radius: 4px; height: 14px; }
+    .bar { background: var(--primary); height: 14px; border-radius: 4px; }
+    .bar.alt { background: var(--success); }
+    .tag {
+      display: inline-block;
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+    .tag.ok { background: var(--success-bg); color: var(--success); }
+    .tag.warn { background: var(--warn-bg); color: var(--warn); }
+    .note {
+      background: var(--warn-bg);
+      border: 1px solid #f1c21b;
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      margin-top: 12px;
+    }
+    code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-size: 0.85em; }
+    .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+    .flow .step {
+      background: #edf5ff;
+      border: 1px solid #a6c8ff;
+      color: var(--primary-dark);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .flow .arrow { color: var(--text-muted); font-weight: 700; }
+    @media (max-width: 720px) { .kpis { grid-template-columns: repeat(2, 1fr); } }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-info">
+      <h1>Unit Test Generation</h1>
+      <p>Strategy-first test generation with generate-run-fix loops and JaCoCo coverage integration &middot; DLIS project</p>
+    </div>
+    <span class="badge-status">Workflow finished</span>
+  </div>
+
+  <div class="card">
+    <h2>Summary</h2>
+    <p>Generated unit tests using JUnit 5 (with Mockito). Used JaCoCo to measure code coverage. The Java Modernization workflow processed 10 batches successfully, then all unit tests of the project were run.</p>
+    <div class="kpis" style="margin-top:16px;">
+      <div class="kpi"><div class="value">12</div><div class="label">Subtasks</div></div>
+      <div class="kpi"><div class="value">10</div><div class="label">Batches processed</div></div>
+      <div class="kpi"><div class="value">26.11</div><div class="label">Total cost</div></div>
+      <div class="kpi"><div class="value">JUnit 5</div><div class="label">Framework</div></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Steps performed</h2>
+    <div class="flow">
+      <span class="step">1. Gather unit test info</span><span class="arrow">&rarr;</span>
+      <span class="step">2. Add JaCoCo</span><span class="arrow">&rarr;</span>
+      <span class="step">3. Create test strategy</span><span class="arrow">&rarr;</span>
+      <span class="step">4. Generate tests (10 batches)</span><span class="arrow">&rarr;</span>
+      <span class="step">5. Run all tests</span><span class="arrow">&rarr;</span>
+      <span class="step">6. Visual summary</span>
+    </div>
+    <ol style="margin-top:12px;">
+      <li><strong>Gathered information about unit tests in the project.</strong> No code coverage tool was found.</li>
+      <li><strong>Installed JaCoCo.</strong> Project facts: Maven build, Java source version 11, 4 modules. JaCoCo 0.8.15 was chosen (Java 11 requires at least 0.8.3).
+        <ul>
+          <li>Root <code>pom.xml</code>: added the <code>jacoco.version</code> property and configured <code>jacoco-maven-plugin</code> in <code>pluginManagement</code> with <code>prepare-agent</code> and <code>report</code> goals bound to the default lifecycle.</li>
+          <li>Plugin reference added to each child module that has tests (<code>dlis-core</code>, <code>dlis-cics-bridge</code>, <code>dlis-web</code>).</li>
+          <li><code>dlis-ear/pom.xml</code>: added the <code>report-aggregate</code> goal. The EAR module already depends on the other modules, so it produces the cross-module aggregate report.</li>
+          <li>Verified the installation by running the unit tests with coverage.</li>
+        </ul>
+      </li>
+      <li><strong>Created the unit test strategy</strong> (<code>UNITTEST.md</code>). Selected tasks: Generate Unit Tests, Run Code Coverage; candidate selection strategy: <em>All classes</em>.</li>
+      <li><strong>Generated tests in 10 batches</strong> (one subtask per package group, see below). Each subtask followed the strategy, ran the tests and fixed failures.</li>
+      <li><strong>Ran all unit tests</strong> of the project and previewed the results.</li>
+      <li><strong>Created this visual summary.</strong></li>
+    </ol>
+  </div>
+
+  <div class="card">
+    <h2>Visual summary &mdash; cost per subtask</h2>
+    <table>
+      <thead>
+        <tr><th>Subtask</th><th class="num">Classes</th><th class="num">Cost</th><th class="bar-cell">Relative cost</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Add JaCoCo library</td><td class="num">&ndash;</td><td class="num">1.04</td><td class="bar-cell"><div class="bar-track"><div class="bar alt" style="width:22%"></div></div></td></tr>
+        <tr><td>Generate Unit Test Strategy</td><td class="num">&ndash;</td><td class="num">1.41</td><td class="bar-cell"><div class="bar-track"><div class="bar alt" style="width:30%"></div></div></td></tr>
+        <tr><td><code>com.dlis.core.dao.jdbc</code></td><td class="num">3</td><td class="num">3.65</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:78%"></div></div></td></tr>
+        <tr><td><code>com.dlis.cics.commarea</code></td><td class="num">3</td><td class="num">2.09</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:45%"></div></div></td></tr>
+        <tr><td><code>com.dlis.core.domain</code> (batch 1)</td><td class="num">2</td><td class="num">0.81</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:17%"></div></div></td></tr>
+        <tr><td><code>com.dlis.core.domain</code> (batch 0)</td><td class="num">5</td><td class="num">2.35</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:50%"></div></div></td></tr>
+        <tr><td><code>com.dlis.core.service</code></td><td class="num">1</td><td class="num">0.82</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:18%"></div></div></td></tr>
+        <tr><td><code>com.dlis.core.dao</code></td><td class="num">1</td><td class="num">4.67</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:100%"></div></div></td></tr>
+        <tr><td><code>com.dlis.cics.program</code></td><td class="num">3</td><td class="num">3.21</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:69%"></div></div></td></tr>
+        <tr><td><code>com.dlis.core.service.ejb</code> (batch 0)</td><td class="num">5</td><td class="num">3.06</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:66%"></div></div></td></tr>
+        <tr><td><code>com.dlis.core.service.ejb</code> (batch 1)</td><td class="num">1</td><td class="num">0.96</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:21%"></div></div></td></tr>
+        <tr><td><code>com.dlis.web.rest</code></td><td class="num">4</td><td class="num">2.05</td><td class="bar-cell"><div class="bar-track"><div class="bar" style="width:44%"></div></div></td></tr>
+      </tbody>
+      <tfoot>
+        <tr><th>Total (12 subtasks)</th><th class="num"></th><th class="num">26.11</th><th></th></tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="card">
+    <h2>Results reported by the test-generation subtasks</h2>
+    <table>
+      <thead>
+        <tr><th>Package / class group</th><th>Reported outcome</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>com.dlis.core.domain</code> &mdash; <code>AuthorityUser</code>, <code>Candidate</code>, <code>DrivingHistory</code>, <code>IssuedLicense</code>, <code>LicenseApplication</code></td>
+          <td>74 tests, all passing</td>
+          <td><span class="tag ok">Passed</span></td>
+        </tr>
+        <tr>
+          <td><code>com.dlis.core.domain</code> &mdash; <code>LicenseFeeSchedule</code>, <code>Payment</code></td>
+          <td>10 tests, all passing</td>
+          <td><span class="tag ok">Passed</span></td>
+        </tr>
+        <tr>
+          <td><code>com.dlis.core.service</code> &mdash; <code>ServiceResult</code></td>
+          <td>10 tests, all passing; 100% instruction, branch, line and method coverage of the class</td>
+          <td><span class="tag ok">Passed</span></td>
+        </tr>
+        <tr>
+          <td><code>com.dlis.core.dao.jdbc</code> &mdash; 5 DAO implementations</td>
+          <td><code>dlis-core</code> run: 155 tests, 0 failures, 0 errors (includes the domain and service tests)</td>
+          <td><span class="tag ok">Passed</span></td>
+        </tr>
+        <tr>
+          <td><code>com.dlis.core.service.ejb</code> &mdash; <code>ApplicationServiceEjb</code>, <code>ApprovalServiceEjb</code>, <code>PaymentServiceEjb</code></td>
+          <td>48 tests, 0 failures, 0 errors</td>
+          <td><span class="tag ok">Passed</span></td>
+        </tr>
+        <tr>
+          <td><code>com.dlis.core.service.ejb</code> &mdash; <code>CandidateServiceEjb</code></td>
+          <td>10 tests, 0 failures, 0 errors</td>
+          <td><span class="tag ok">Passed</span></td>
+        </tr>
+        <tr>
+          <td><code>com.dlis.cics.commarea</code>, <code>com.dlis.cics.program</code>, <code>com.dlis.web.rest</code></td>
+          <td>The subtasks returned no result summary. Test files for <code>DlisApplProgram</code> and <code>DlisPayApprProgram</code> exist in <code>dlis-cics-bridge</code>; no test files were found for the <code>commarea</code> or <code>web.rest</code> classes.</td>
+          <td><span class="tag warn">Needs review</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      The per-subtask counts above are taken from each subtask's own report. Per-module totals and JaCoCo coverage figures for the final full run are available in the test and coverage output of that run.
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Build and configuration changes made along the way</h2>
+    <ul>
+      <li>JaCoCo 0.8.15 plugin configuration added to the root, module and EAR <code>pom.xml</code> files.</li>
+      <li>Root <code>pom.xml</code>: removed a duplicate <code>org.mockito:mockito-junit-jupiter</code> entry in <code>dependencyManagement</code> that prevented Maven from reading the project.</li>
+      <li><code>dlis-core/pom.xml</code>: added <code>mockito-junit-jupiter</code>, and <code>-Dnet.bytebuddy.experimental=true</code> in the Surefire <code>argLine</code> because the test JVM is newer than the Byte Buddy version bundled with Mockito 5.5.0 officially supports.</li>
+      <li>Maven was installed with Homebrew for running the tests.</li>
+    </ul>
+  </div>
+
+</div>
+</body>
+</html>

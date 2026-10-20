@@ -218,4 +218,33 @@ class ApplicationServiceEjbTest {
         assertFalse(result.isOk());
         assertTrue(result.getMessage().contains("ELIGIBILITY"));
     }
+
+    // ── inquireStatus ─────────────────────────────────────────────────────────
+
+    @Test
+    void inquireStatus_found_returnsApplication() {
+        // Arrange
+        when(applicationDao.findById(100L)).thenReturn(Optional.of(learnerApp));
+
+        // Act
+        ServiceResult<LicenseApplication> result = service.inquireStatus(100L);
+
+        // Assert
+        assertTrue(result.isOk());
+        assertEquals(100L, result.getPayload().getApplicationId());
+    }
+
+    @Test
+    void inquireStatus_notFound_returnsError() {
+        // Arrange
+        when(applicationDao.findById(999L)).thenReturn(Optional.empty());
+
+        // Act
+        ServiceResult<LicenseApplication> result = service.inquireStatus(999L);
+
+        // Assert
+        assertFalse(result.isOk());
+        assertEquals(ServiceResult.RC_NOT_FOUND, result.getReturnCode());
+        assertTrue(result.getMessage().contains("APPLICATION NOT FOUND"));
+    }
 }

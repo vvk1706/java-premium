@@ -1,0 +1,67 @@
+Unit Test Generation
+
+Strategy-first test generation with generate-run-fix loops and JaCoCo coverage integration.
+
+
+I want to gather information about unit tests in your project
+
+I found no code coverage tool for this project. Let me install JaCoCo library for code coverage reporting.
+
+Now I have all the info I need. The project:
+
+Build tool: Maven
+Java source version: 11 → JaCoCo 0.8.15 is preferred and Java 11 requires minimum 0.8.3, so 0.8.15 is compatible
+Multi-module: 4 modules → need the jacoco-maven-plugin with report-aggregate goal on an aggregator module
+Let me check if any child module already has plugin configuration, and which module is the best candidate for aggregation (the dlis-ear module is the top-level aggregator):
+
+I have a complete picture. Now I'll apply the changes:
+
+Root pom.xml: Add jacoco.version property and configure jacoco-maven-plugin in <pluginManagement> with prepare-agent and report goals bound to the default lifecycle
+dlis-ear/pom.xml: Add report-aggregate goal to produce a cross-module aggregate report (since dlis-ear already depends on all other modules)
+
+I have a complete picture. Now I'll apply the changes:
+
+Root pom.xml: Add jacoco.version property and configure jacoco-maven-plugin in <pluginManagement> with prepare-agent and report goals bound to the default lifecycle
+dlis-ear/pom.xml: Add report-aggregate goal to produce a cross-module aggregate report (since dlis-ear already depends on all other modules)
+
+Now add the plugin reference to each child module that has tests (dlis-core, dlis-cics-bridge, dlis-web) and add the report-aggregate goal to dlis-ear:
+
+Now add the report-aggregate execution to dlis-ear/pom.xml. The EAR module already depends on all three other modules, making it the perfect aggregator:
+
+All POM files are updated. Now let's verify the installation by running the unit tests with coverage:
+
+Let me create a unit test strategy for this project
+
+Tools awaiting approval:
+Update Todo List
+Edit
+1. Analyze the project
+2. Gather key information about unit testing the codebase
+3. Create unit testing strategy file
+
+
+Select Tasks
+Check all actions you want to perform.
+Re-generate Unit Test Strategy
+Produce a new unit test strategy file even if one already exists
+
+Generate Unit Tests
+Create or update unit tests based on the current test strategy
+
+Candidate Selection Strategy
+*
+
+All classes
+Run Code Coverage
+Measure how much of the source code is exercised by the generated tests and report the results
+
+Enable Git Flow
+Automatically commit changes to a newly created branch at key steps
+
+Processed 10 batches successfully
+
+I want to run all unit tests of this project.
+
+Tests were executed. You can preview the result by expanding the tool result.
+
+I will create a visual summary of the Unit Testing process
