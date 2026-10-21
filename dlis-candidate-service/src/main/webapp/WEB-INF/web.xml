@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
+                             http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+
+  <display-name>DLIS Candidate (PII) service</display-name>
+
+  <!--
+    Protect all business endpoints. TLS is terminated by the OpenShift Route / gateway,
+    so no CONFIDENTIAL transport guarantee here (it would redirect to a port the pod does not open).
+    The /health endpoints are served by mpHealth outside this web module and stay unauthenticated
+    for the kubelet probes.
+  -->
+  <security-constraint>
+    <web-resource-collection>
+      <web-resource-name>DLIS REST API</web-resource-name>
+      <url-pattern>/api/v1/*</url-pattern>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>DLIS_OFFICER</role-name>
+      <role-name>DLIS_AUTHORITY</role-name>
+      <role-name>DLIS_ADMIN</role-name>
+      <role-name>DLIS_SERVICE</role-name>
+    </auth-constraint>
+  </security-constraint>
+
+  <login-config>
+    <auth-method>BASIC</auth-method>
+    <realm-name>DLIS Realm</realm-name>
+  </login-config>
+
+  <security-role><role-name>DLIS_OFFICER</role-name></security-role>
+  <security-role><role-name>DLIS_AUTHORITY</role-name></security-role>
+  <security-role><role-name>DLIS_ADMIN</role-name></security-role>
+  <security-role><role-name>DLIS_SERVICE</role-name></security-role>
+
+</web-app>

@@ -1,0 +1,17 @@
+{% for svc in dlis_services %}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: dlis-{{ svc }}-service
+  namespace: {{ dlis_namespace }}
+  labels: {{ dlis_common_labels | to_json }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: dlis-{{ svc }}-service
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+{% endfor %}

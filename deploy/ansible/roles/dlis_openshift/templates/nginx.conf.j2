@@ -1,0 +1,47 @@
+# DLIS API gateway — keeps the monolith's public URL contract (/dlis/api/v1/...) while routing
+# to the owning microservice. Runs unprivileged (arbitrary UID on OpenShift): everything writable is in /tmp.
+worker_processes auto;
+error_log /dev/stderr warn;
+pid /tmp/nginx.pid;
+
+events { worker_connections 1024; }
+
+http {
+    access_log /dev/stdout;
+    client_body_temp_path /tmp/client_temp;
+    proxy_temp_path       /tmp/proxy_temp;
+    fastcgi_temp_path     /tmp/fastcgi_temp;
+    uwsgi_temp_path       /tmp/uwsgi_temp;
+    scgi_temp_path        /tmp/scgi_temp;
+
+    client_max_body_size 1m;
+    proxy_connect_timeout 3s;
+    proxy_read_timeout    30s;
+    proxy_http_version    1.1;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+
+    # Re-resolve nothing: Services have stable ClusterIPs and are created before the gateway.
+    upstream candidate { server dlis-candidate-service:9080; keepalive 8; }
+    upstream licensing { server dlis-licensing-service:9080; keepalive 8; }
+    upstream payment   { server dlis-payment-service:9080;   keepalive 8; }
+
+    server {
+        listen 8080 default_server;
+        server_tokens off;
+
+        location = /healthz { access_log off; default_type text/plain; return 200 "ok\n"; }
+
+        # Internal saga callback: never reachable from outside the cluster.
+        location ~ ^/dlis/api/v1/applications/[^/]+/payment-recorded$ { return 404; }
+
+        # Payment is its own service but keeps its URL under /applications/{id}/...
+        location ~ ^/dlis/api/v1/applications/[^/]+/payment$ { proxy_pass http://payment; }
+
+        location /dlis/api/v1/candidates   { proxy_pass http://candidate; }
+        location /dlis/api/v1/applications { proxy_pass http://licensing; }
+
+        location / { return 404; }
+    }
+}

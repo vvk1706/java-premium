@@ -1,0 +1,10 @@
+---
+dlis_gateway:
+  replicas: 2
+  cpu_request: 50m
+  cpu_limit: 500m
+  memory_request: 64Mi
+  memory_limit: 256Mi
+dlis_common_labels:
+  app.kubernetes.io/part-of: dlis
+  app.kubernetes.io/managed-by: ansible

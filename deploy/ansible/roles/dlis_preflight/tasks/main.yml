@@ -1,0 +1,8 @@
+---
+- name: Pipeline host checks
+  ansible.builtin.include_tasks: pipeline.yml
+  when: "'pipeline' in group_names"
+
+- name: Cluster checks
+  ansible.builtin.include_tasks: cluster.yml
+  when: "'openshift_clusters' in group_names"

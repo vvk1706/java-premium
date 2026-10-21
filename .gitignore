@@ -13,3 +13,9 @@ target/
 .DS_Store
 **/.DS_Store
 *.class
+.*
+
+# Ansible pipeline: rendered manifests contain secrets; the lint configs are dotfiles we do want
+deploy/.rendered/
+!deploy/ansible/.yamllint
+!deploy/ansible/.ansible-lint

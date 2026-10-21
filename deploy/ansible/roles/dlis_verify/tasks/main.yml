@@ -1,0 +1,118 @@
+---
+# Post-rollout verification against ONE cluster (current inventory host).
+- name: Read the Deployments
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ dlis_namespace }}"
+    label_selectors:
+      - app.kubernetes.io/part-of=dlis
+  register: dlis_deps
+
+- name: Every Deployment must be fully available
+  ansible.builtin.assert:
+    that:
+      - item.status.readyReplicas | default(0) >= 1
+      - item.status.readyReplicas | default(0) == item.status.replicas | default(0)
+    fail_msg: "{{ item.metadata.name }}: {{ item.status.readyReplicas | default(0) }}/{{ item.status.replicas | default(0) }} ready"
+    quiet: true
+  loop: "{{ dlis_deps.resources }}"
+  loop_control:
+    label: "{{ item.metadata.name }}"
+
+- name: Read the running pods
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Pod
+    namespace: "{{ dlis_namespace }}"
+    label_selectors:
+      - app.kubernetes.io/part-of=dlis
+    field_selectors:
+      - status.phase=Running
+  register: dlis_pods
+
+- name: Read the nodes
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+  register: dlis_verify_nodes
+
+- name: Map pods to CPU architectures
+  ansible.builtin.set_fact:
+    dlis_pod_arches: >-
+      {{ dlis_pods.resources
+         | map(attribute='spec.nodeName')
+         | map('extract', dlis_verify_nodes.resources | items2dict(key_name='metadata.name', value_name='metadata.labels'))
+         | map(attribute='kubernetes.io/arch') | unique | sort | list }}
+
+- name: Pods must only run on architectures allowed for this cluster
+  ansible.builtin.assert:
+    that: dlis_pod_arches | difference(dlis_node_arches) | length == 0
+    fail_msg: "Pods run on {{ dlis_pod_arches }} but this cluster allows {{ dlis_node_arches }}"
+    quiet: true
+
+- name: Report architectures in use
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }}: {{ dlis_pods.resources | length }} DLIS pods running on {{ dlis_pod_arches }}"
+
+- name: Read the route
+  kubernetes.core.k8s_info:
+    api_version: route.openshift.io/v1
+    kind: Route
+    name: dlis
+    namespace: "{{ dlis_namespace }}"
+  register: dlis_route
+
+- name: Remember the public URL
+  ansible.builtin.set_fact:
+    dlis_public_url: "https://{{ dlis_route.resources[0].spec.host }}/dlis/api/v1"
+
+# ── Smoke tests through the public Route ─────────────────────────────────────
+- name: Gateway health through the Route
+  ansible.builtin.uri:
+    url: "https://{{ dlis_route.resources[0].spec.host }}/healthz"
+    validate_certs: "{{ dlis_validate_certs }}"
+    status_code: 200
+  register: dlis_gw
+  retries: 10
+  delay: 6
+  until: dlis_gw.status == 200
+
+- name: Unauthenticated API calls are rejected (security constraints survived the decomposition)
+  ansible.builtin.uri:
+    url: "{{ dlis_public_url }}/{{ item }}"
+    validate_certs: "{{ dlis_validate_certs }}"
+    status_code: 401
+  loop:
+    - candidates/1
+    - applications/1
+
+- name: The internal saga callback is not reachable from outside the cluster
+  ansible.builtin.uri:
+    url: "{{ dlis_public_url }}/applications/1/payment-recorded"
+    method: POST
+    body_format: json
+    body: { paymentReference: probe }
+    validate_certs: "{{ dlis_validate_certs }}"
+    status_code: 404
+
+- name: Read-only authenticated smoke test (candidate, licensing and the Db2 pool)
+  ansible.builtin.uri:
+    url: "{{ dlis_public_url }}/{{ item }}"
+    url_username: "{{ dlis_smoke_user }}"
+    url_password: "{{ dlis_smoke_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ dlis_validate_certs }}"
+    status_code: [200, 404]     # 404 = row absent; 5xx or 401 would mean the chain is broken
+  loop:
+    - candidates/1
+    - applications/1
+  no_log: true
+  when: dlis_smoke_user | length > 0
+
+# ── Optional end-to-end saga test (WRITES DATA) ──────────────────────────────
+- name: End-to-end test through all three services
+  ansible.builtin.include_tasks: e2e.yml
+  when:
+    - dlis_e2e_smoke | bool
+    - dlis_smoke_user | length > 0

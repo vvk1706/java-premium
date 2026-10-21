@@ -1,0 +1,37 @@
+---
+# Checks on the machine that builds and pushes (host group "pipeline").
+- name: Find required build tools
+  ansible.builtin.command: "which {{ item }}"
+  loop: "{{ ['mvn', 'podman'] if (dlis_build_images | bool) else ['mvn'] }}"
+  changed_when: false
+  register: dlis_tools
+  failed_when: false
+
+- name: Fail when a build tool is missing
+  ansible.builtin.assert:
+    that: item.rc == 0
+    fail_msg: "{{ item.item }} not found in PATH on the pipeline host"
+    quiet: true
+  loop: "{{ dlis_tools.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+
+- name: Refuse placeholder secrets
+  ansible.builtin.assert:
+    that:
+      - dlis_db2_password is defined and dlis_db2_password | length > 0
+      - dlis_service_password is defined and dlis_service_password | length > 0
+      - "'CHANGE-ME' not in dlis_db2_password and 'CHANGE-ME' not in dlis_service_password"
+      - dlis_users | length > 0
+    fail_msg: >-
+      Secrets are missing or still placeholders. Copy group_vars/all/vault.example.yml to
+      vault.yml, fill it in and encrypt it with ansible-vault.
+    quiet: true
+  no_log: true
+
+- name: Refuse placeholder registry
+  ansible.builtin.assert:
+    that: "dlis_registry_push is not search('example.com') or dlis_allow_example_registry | default(false) | bool"
+    fail_msg: "dlis_registry_push still points at example.com; set it to your registry"
+    quiet: true
+  when: dlis_build_images | bool

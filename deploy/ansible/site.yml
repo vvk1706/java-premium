@@ -1,0 +1,69 @@
+---
+# DLIS on OpenShift (x86 and IBM Z) — full pipeline.
+#
+#   ansible-galaxy collection install -r requirements.yml
+#   ansible-playbook -i inventories/<env> site.yml --ask-vault-pass
+#
+# Useful switches (-e):
+#   dlis_run_unit_tests=false      skip the Maven tests (build only)
+#   dlis_build_images=false        reuse images already pushed for dlis_image_tag
+#   dlis_run_db_migration=true     apply the DDL (needs hosts in group db2_admin)
+#   dlis_deployment_mode=per-arch  separate Deployments (and scaling) per CPU architecture
+#   dlis_render_only=true          render the manifests into .rendered/ and stop
+#   --limit ocp-z                  roll out to one cluster only
+#   --tags build|images|db|deploy|verify
+
+- name: 1. Pre-flight — pipeline host
+  hosts: pipeline
+  gather_facts: false
+  tags: [always]
+  roles:
+    - role: dlis_preflight
+
+- name: 2. Build the three service WARs (once; architecture independent)
+  hosts: pipeline
+  gather_facts: false
+  tags: [build]
+  roles:
+    - role: dlis_build
+
+- name: 3. Build and push multi-arch images (linux/amd64 + linux/s390x manifest lists)
+  hosts: pipeline
+  gather_facts: false
+  tags: [images]
+  roles:
+    - role: dlis_images
+      when: dlis_build_images | bool
+
+- name: 4. Database objects
+  hosts: db2_admin
+  gather_facts: false
+  tags: [db]
+  roles:
+    - role: dlis_database
+      when: dlis_run_db_migration | bool
+
+- name: 5. Roll out to each OpenShift cluster (x86 first as canary, then IBM Z)
+  hosts: openshift_clusters
+  gather_facts: false
+  serial: 1                      # one cluster at a time; a failure stops the pipeline before the next
+  tags: [deploy]
+  module_defaults:
+    group/kubernetes.core.k8s: "{{ dlis_k8s_defaults }}"
+    kubernetes.core.k8s_info: "{{ dlis_k8s_defaults }}"
+    kubernetes.core.k8s_rollback: "{{ dlis_k8s_defaults }}"
+  roles:
+    - role: dlis_preflight
+    - role: dlis_openshift
+
+- name: 6. Verify each cluster
+  hosts: openshift_clusters
+  gather_facts: false
+  serial: 1
+  tags: [verify]
+  module_defaults:
+    group/kubernetes.core.k8s: "{{ dlis_k8s_defaults }}"
+    kubernetes.core.k8s_info: "{{ dlis_k8s_defaults }}"
+  roles:
+    - role: dlis_verify
+      when: not (dlis_render_only | bool)

@@ -1,0 +1,32 @@
+---
+# Builds the three service WARs once. The WAR and the DB2 JCC jar are architecture independent,
+# so this single build feeds the amd64 and the s390x image.
+- name: Maven build of all DLIS modules
+  ansible.builtin.command:
+    argv: >-
+      {{ ['mvn', '-B', 'clean', 'verify']
+         if (dlis_run_unit_tests | bool)
+         else ['mvn', '-B', 'clean', 'package', '-DskipTests'] }}
+    chdir: "{{ dlis_repo_root }}"
+  environment: "{{ {'JAVA_HOME': dlis_java_home} if (dlis_java_home | default('') | length > 0) else {} }}"
+  changed_when: true
+
+- name: Check the WAR of every service
+  ansible.builtin.stat:
+    path: "{{ dlis_repo_root }}/dlis-{{ item }}-service/target/dlis-{{ item }}-service.war"
+  loop: "{{ dlis_service_order }}"
+  register: dlis_wars
+
+- name: Check the DB2 JCC driver of every service
+  ansible.builtin.stat:
+    path: "{{ dlis_repo_root }}/dlis-{{ item }}-service/target/liberty-shared/db2jcc4.jar"
+  loop: "{{ dlis_service_order }}"
+  register: dlis_jccs
+
+- name: Fail on missing artifacts
+  ansible.builtin.assert:
+    that:
+      - dlis_wars.results | rejectattr('stat.exists') | list | length == 0
+      - dlis_jccs.results | rejectattr('stat.exists') | list | length == 0
+    fail_msg: "Maven finished but WAR / db2jcc4.jar artifacts are missing"
+    quiet: true

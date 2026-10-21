@@ -1,0 +1,7 @@
+---
+dlis_k8s_auth:
+  kubeconfig: "{{ lookup('env', 'KUBECONFIG') | default('~/.kube/config', true) }}"
+  context: dlis-x86            # oc config get-contexts
+dlis_node_arches: [amd64]
+dlis_route_host: dlis.apps.x86.example.com
+dlis_db2_host: db2z.example.com   # Db2 stays on IBM Z; x86 pods reach it over TLS

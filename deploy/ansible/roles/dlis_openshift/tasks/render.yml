@@ -1,0 +1,43 @@
+---
+- name: Create the render directory (private, it contains secrets)
+  ansible.builtin.file:
+    path: "{{ dlis_render_dir }}/{{ inventory_hostname }}"
+    state: directory
+    mode: "0700"
+
+- name: Render cluster-wide manifests
+  ansible.builtin.template:
+    src: "{{ item }}.yml.j2"
+    dest: "{{ dlis_render_dir }}/{{ inventory_hostname }}/{{ item }}.yml"
+    mode: "0600"
+  loop:
+    - namespace
+    - serviceaccount
+    - configmap
+    - secrets
+    - service
+    - gateway
+    - autoscaling
+    - networkpolicy
+    - route
+  loop_control:
+    label: "{{ item }}"
+
+- name: Render ServiceMonitors
+  ansible.builtin.template:
+    src: servicemonitor.yml.j2
+    dest: "{{ dlis_render_dir }}/{{ inventory_hostname }}/servicemonitor.yml"
+    mode: "0600"
+  when: dlis_create_servicemonitor | bool
+
+- name: Render one Deployment per scale target
+  ansible.builtin.template:
+    src: deployment.yml.j2
+    dest: "{{ dlis_render_dir }}/{{ inventory_hostname }}/deployment-{{ item.name }}.yml"
+    mode: "0600"
+  vars:
+    svc: "{{ item.svc }}"
+    arch: "{{ item.arch | default('') }}"
+  loop: "{{ dlis_scale_targets }}"
+  loop_control:
+    label: "{{ item.name }}"

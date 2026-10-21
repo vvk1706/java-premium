@@ -1,0 +1,35 @@
+---
+# Roll every DLIS Deployment back to its previous ReplicaSet on the selected clusters.
+#   ansible-playbook -i inventories/<env> rollback.yml --limit ocp-z
+# (The data model is additive; the legacy monolith and CICS bridge stay in place, so the
+#  application-level fallback is simply to point clients back at the monolith.)
+- name: Roll back DLIS
+  hosts: openshift_clusters
+  gather_facts: false
+  serial: 1
+  module_defaults:
+    group/kubernetes.core.k8s: "{{ dlis_k8s_defaults }}"
+    kubernetes.core.k8s_info: "{{ dlis_k8s_defaults }}"
+    kubernetes.core.k8s_rollback: "{{ dlis_k8s_defaults }}"
+  tasks:
+    - name: Find DLIS Deployments
+      kubernetes.core.k8s_info:
+        api_version: apps/v1
+        kind: Deployment
+        namespace: "{{ dlis_namespace }}"
+        label_selectors: [app.kubernetes.io/part-of=dlis]
+      register: dlis_deps
+
+    - name: Roll back, payment first (reverse dependency order)
+      kubernetes.core.k8s_rollback:
+        api_version: apps/v1
+        kind: Deployment
+        name: "{{ item.metadata.name }}"
+        namespace: "{{ dlis_namespace }}"
+        wait: true
+        wait_timeout: "{{ dlis_rollout_timeout_seconds }}"
+      loop: >-
+        {{ dlis_deps.resources
+           | sort(attribute='metadata.name', reverse=true) }}
+      loop_control:
+        label: "{{ item.metadata.name }}"

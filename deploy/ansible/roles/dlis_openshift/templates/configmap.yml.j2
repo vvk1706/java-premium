@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dlis-config
+  namespace: {{ dlis_namespace }}
+  labels: {{ dlis_common_labels | to_json }}
+data:
+  DB2_HOST: {{ dlis_db2_host | to_json }}
+  DB2_PORT: {{ dlis_db2_port | string | to_json }}
+  DB2_DBNAME: {{ dlis_db2_name | to_json }}
+  DB2_SCHEMA: {{ dlis_db2_schema | to_json }}
+  DB2_SSL: {{ dlis_db2_ssl | string | to_json }}
+  CANDIDATE_SERVICE_URL: "http://dlis-candidate-service:9080/dlis/api/v1"
+  LICENSING_SERVICE_URL: "http://dlis-licensing-service:9080/dlis/api/v1"
+  WLP_LOGGING_CONSOLE_FORMAT: "JSON"
+  WLP_LOGGING_CONSOLE_LOGLEVEL: "INFO"

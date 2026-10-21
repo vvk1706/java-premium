@@ -1,0 +1,98 @@
+---
+# ───────────────────────── layout ─────────────────────────
+dlis_repo_root: "{{ playbook_dir }}/../.."
+# Rollout order = dependency order: licensing calls candidate, payment calls licensing.
+dlis_service_order: [candidate, licensing, payment]
+dlis_java_home: ""              # leave empty to use the JAVA_HOME of the pipeline user (JDK 17+)
+dlis_rollback_on_failure: true
+dlis_render_only: false
+dlis_k8s_defaults:
+  kubeconfig: "{{ dlis_k8s_auth.kubeconfig }}"
+  context: "{{ dlis_k8s_auth.context }}"
+  validate_certs: "{{ dlis_validate_certs }}"
+
+# ───────────────────────── identity / images ─────────────────────────
+dlis_namespace: dlis
+dlis_version: "1.0.0"
+dlis_image_tag: "{{ dlis_version }}"
+
+# Where the pipeline pushes the multi-arch manifest lists, and where the clusters pull them from.
+# Use a registry that BOTH clusters can reach (Quay, ICR, Artifactory). An internal OpenShift
+# registry is per-cluster, so it cannot carry one manifest list to two clusters.
+dlis_registry_push: quay.example.com/dlis
+dlis_registry_pull: "{{ dlis_registry_push }}"
+dlis_registry_username: ""           # set both (vault) to create an image pull secret
+dlis_registry_password: ""
+
+# One manifest list per service; both architectures are built from the SAME WAR/JCC jar.
+dlis_platforms: [linux/amd64, linux/s390x]
+dlis_liberty_image: icr.io/appcafe/websphere-liberty:25.0.0.12-full-java17-openj9-ubi
+dlis_gateway_image: registry.access.redhat.com/ubi9/nginx-124:latest   # multi-arch incl. s390x
+
+# ───────────────────────── pipeline switches ─────────────────────────
+dlis_run_unit_tests: true        # `mvn verify` vs `mvn package -DskipTests`
+dlis_build_images: true          # false when CI already pushed the tag
+dlis_run_db_migration: false     # needs a host in group db2_admin
+dlis_rollout_timeout_seconds: 600
+dlis_keep_rendered: false        # keep rendered manifests (they contain secrets!) after apply
+dlis_render_dir: "{{ playbook_dir }}/../.rendered"
+
+# ───────────────────────── services ─────────────────────────
+# `replicas` is the default; `dlis_replicas_by_arch` (per cluster) overrides it in per-arch mode.
+dlis_services:
+  candidate:
+    description: Candidate (PII) service
+    replicas: 2
+    cpu_request: 250m
+    cpu_limit: "1"
+    memory_request: 384Mi
+    memory_limit: 768Mi
+    hpa_max: 6
+  licensing:
+    description: Licensing workflow service
+    replicas: 2
+    cpu_request: 500m
+    cpu_limit: "2"
+    memory_request: 512Mi
+    memory_limit: 1Gi
+    hpa_max: 8
+  payment:
+    description: Payment and fee service
+    replicas: 2
+    cpu_request: 250m
+    cpu_limit: "1"
+    memory_request: 384Mi
+    memory_limit: 768Mi
+    hpa_max: 6
+dlis_hpa_cpu_utilization: 70
+
+# ───────────────────────── architecture placement ─────────────────────────
+# unified  : one multi-arch Deployment per service; the scheduler may use any listed arch and a
+#            topology spread keeps pods balanced across architectures in a mixed cluster.
+# per-arch : one Deployment per service AND architecture (nodeSelector kubernetes.io/arch),
+#            so Z and x86 can be sized and scaled independently. Services still select all pods.
+dlis_deployment_mode: unified
+dlis_node_arches: [amd64, s390x]
+dlis_replicas_by_arch: {}
+
+# ───────────────────────── database ─────────────────────────
+dlis_db2_host: db2.dlis.internal
+dlis_db2_port: 50000
+dlis_db2_name: DLISDB
+dlis_db2_schema: DLIS
+dlis_db2_ssl: "true"
+dlis_db2_truststore_b64: ""   # optional: base64 of a PKCS12 truststore holding the Db2 CA (vault)
+dlis_db2_truststore_password: changeit
+
+# ───────────────────────── exposure ─────────────────────────
+dlis_route_host: ""           # empty = let OpenShift generate it
+dlis_route_tls_termination: edge
+dlis_validate_certs: true
+dlis_ingress_namespace_label: network.openshift.io/policy-group=ingress
+dlis_create_namespace: true
+dlis_create_servicemonitor: false   # needs the Prometheus Operator CRDs (user-workload monitoring)
+
+# ───────────────────────── smoke tests ─────────────────────────
+dlis_e2e_smoke: false          # writes a test candidate/application/payment into the real database!
+dlis_smoke_user: ""
+dlis_smoke_password: ""

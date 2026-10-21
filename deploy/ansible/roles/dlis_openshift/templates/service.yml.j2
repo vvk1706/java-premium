@@ -1,0 +1,35 @@
+{% for svc in dlis_services %}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dlis-{{ svc }}-service
+  namespace: {{ dlis_namespace }}
+  labels:
+    app.kubernetes.io/name: dlis-{{ svc }}-service
+    app.kubernetes.io/part-of: dlis
+spec:
+  # Selects the pods of EVERY architecture-specific Deployment of the service.
+  selector:
+    app.kubernetes.io/name: dlis-{{ svc }}-service
+  ports:
+    - name: http
+      port: 9080
+      targetPort: http
+{% endfor %}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dlis-gateway
+  namespace: {{ dlis_namespace }}
+  labels:
+    app.kubernetes.io/name: dlis-gateway
+    app.kubernetes.io/part-of: dlis
+spec:
+  selector:
+    app.kubernetes.io/name: dlis-gateway
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

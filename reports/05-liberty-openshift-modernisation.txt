@@ -1,0 +1,167 @@
+prompt:
+
+modernize current application to Liberty on OpenShift deployment. decompose monolyth to optimal number of microservices, implement them on containerized liberty runtime, arrange necessary rollout to openshift considering deployment on Z and x86, build deployment pipeline as ansible playbook. put everything into branch "liberty-openshift-modernization". put summary report and performed steps into file reports/05-liberty-openshift-modernization.html, put this file in branches "liberty-openshift-modernization" and "main"
+
+I'll start by exploring the project.
+
+why are you stopped?
+
+I stopped because I had read all the code and settled the design, but I hadn't started writing files. I'm continuing with the implementation now.
+
+Design decisions:
+
+Branch base: I'm branching from upgrade-to-java-17, because the Liberty/Java 17 container images need that upgrade.
+Three services, split by data ownership.
+candidate owns PII.
+licensing owns the application workflow, driving history, approvals and issuance. These share one transactional aggregate, so I keep them together to avoid distributed transactions.
+payment owns payments and the fee schedule.
+Legacy modules stay as the strangler and rollback path, and the CICS bridge stays on z/OS.
+
+Tools awaiting approval:
+Update Todo List
+Edit
+Create branch liberty-openshift-modernization (from upgrade-to-java-17) and verify baseline build
+Create dlis-service-commons module
+Implement dlis-candidate-service (code, tests, Liberty config, Dockerfile, DDL)
+Implement dlis-licensing-service (code, tests, Liberty config, Dockerfile, DDL)
+Implement dlis-payment-service (code, tests, Liberty config, Dockerfile, DDL)
+Update parent pom/modules; build + run unit tests
+Build and smoke-test container image locally
+OpenShift manifests (Jinja templates) for x86 and s390x
+Ansible pipeline (build, image, multi-arch manifest, db, deploy, verify)
+Validate Ansible (syntax-check) and rendered YAML
+Write reports/05-liberty-openshift-modernization.html
+Commit on feature branch; add report to main
+
+Baseline: 212 tests pass on the Java 17 branch. I'm creating the shared module and the three services, reusing the existing logic and tests where I can.
+
+Before copying code I need a few more details: the seed data, the indexes, beans.xml, and which tests reference the DLIS. SQL schema prefix.
+
+Before writing code I'm checking what the local container and cluster tooling can do. That tells me what I can validate end to end.
+
+Docker is down and podman machine is stopped, so I'll try to start it later for the image smoke test. For now I'm reading the remaining sources I'll port.
+
+The design is settled. First I'm checking that Maven Central can supply two things the offline cache lacks: the javax-era MicroProfile Health API and a JSON-B implementation for tests.
+
+Maven Central resolves. Next I'm checking whether a container runtime can start, because that decides whether I can smoke-test the Liberty images.
+
+First, the parent POM, the shared commons module and the three service POMs. I need the cics-bridge POM and the Payment domain class for reference.
+
+Next I'm writing the commons module: health checks, REST error helpers, and service-to-service client support.
+
+Two of the commons tests are shaky. HealthCheckResponse needs a provider at runtime, and the newClient test only passes by accident. I'm fixing both, using a small test-only provider.
+
+Two of the commons tests are shaky. HealthCheckResponse needs a provider at runtime, and the newClient test only passes by accident. I'm fixing both, using a small test-only provider.
+
+The regex rewrite left ugly inline JSON, so I'm replacing those lines with ApiErrors.badRequest.
+
+A business rejection from licensing shouldn't become a 503. I'm switching to SessionContext.setRollbackOnly() so the local insert is undone and the real error code still reaches the caller.
+
+I'm adding the per-service Liberty runtime config, web descriptors and Dockerfiles. The main decisions are non-XA datasources and in-cluster auth through a DLIS_SERVICE role.
+
+Response.status needs a JAX-RS runtime. I'm adding Jersey as a test dependency in commons, then the same in each service so their resource tests can run.
+
+Those artifacts aren't cached, but Central is reachable, so I'll run the build online.
+
+Commons passes with 23 tests. Next is the whole reactor, which compiles and tests the three services.
+
+The JSON-P tests need a provider on the test classpath. Parsson is already in the local repo, but I'll use the org.glassfish:jakarta.json 1.1.x implementation that matches the javax namespace.
+
+Licensing passes with 141 tests. The remaining failure is in my own PaymentDaoImplTest.findById_mapsRow, caused by strict-stubs argument mismatch on a stub I wrote (prepareStatement).
+
+The whole reactor builds with 432 tests passing (187 + 25 for the monolith, 23 + 25 + 141 + 31 for the new modules). Next I'm checking the WAR contents and whether the DB2 driver jar is real.
+
+The image builds. Before building all three I'm running it to test the real runtime: server startup, feature resolution, and the health and auth behavior.
+
+Both architectures run under emulation here. I'll prove the multi-arch build path with a real manifest build for the candidate service, then start the s390x variant.
+
+The emulated s390x build is slow but looks complete, since two image IDs were produced. I'll check the manifest.
+
+The multi-arch manifest has both linux/amd64 and linux/s390x entries. I'm running the s390x variant to confirm Liberty starts there, in the background because of emulation.
+
+The whole reactor builds with 432 tests passing (187 + 25 for the monolith, 23 + 25 + 141 + 31 for the new modules). Next I'm checking the WAR contents and whether the DB2 driver jar is real.
+
+$ cd /Users/valerykornienko/workspace/java-premium/dlis-candidate-service export DOCKER_HOST='unix:///var/folders/pr/4vxf3z193wqfpl7gx0jvy3h00000gn/T/podman/podman-machine-default-api.sock' podman build -t localhost/dlis-candidate-service:smoke -f Dockerfile . 2>&1 | tail -15
++ chmod -R g+rwx /output/resources
+++ awk '/^Cache is [0-9.]*% .*full/ {print substr($3, 1, length($3)-1)}'
++ FULL=61
++ echo 'SCC layer is 61% full.'
+--> f302053d32fd
+STEP 10/12: USER 1001
+--> 1d0d8b17ba84
+STEP 11/12: EXPOSE 9080
+--> 93c47e169ed6
+STEP 12/12: HEALTHCHECK --interval=30s --timeout=5s --start-period=90s --retries=3     CMD curl -sf http://localhost:9080/health/ready || exit 1
+COMMIT localhost/dlis-candidate-service:smoke
+time="2026-10-21T12:28:24+10:00" level=warning msg="HEALTHCHECK is not supported for OCI image format and will be ignored. Must use `docker` format"
+--> 8b2c5e336b5f
+Successfully tagged localhost/dlis-candidate-service:smoke
+8b2c5e336b5f7a77c3dc7e92d3e80aca443171015e2be8e84059c45b05eb49be
+
+
+The image builds. Before building all three I'm running it to test the real runtime: server startup, feature resolution, and the health and auth behavior.
+
+Both architectures run under emulation here. I'll prove the multi-arch build path with a real manifest build for the candidate service, then start the s390x variant.
+
+$ cd /Users/valerykornienko/workspace/java-premium/dlis-candidate-service export DOCKER_HOST='unix:///var/folders/pr/4vxf3z193wqfpl7gx0jvy3h00000gn/T/podman/podman-machine-default-api.sock' podman manifest rm localhost/dlis-candidate-service:multi >/dev/null 2>&1 podman build --platform linux/amd64,linux/s390x --manifest localhost/dlis-candidate-service:multi -f Dockerfile . 2>&1 | grep -E "^STEP|Error|error|SCC layer|Successfully|^[0-9a-f]{64}" | tail -12 podman manifest inspect localhost/dlis-candidate-service:multi | python3 -c "import sys,json;m=json.load(sys.stdin);print([(x['platform']['os'],x['platform']['architecture']) for x in m['manifests']])"
+[TIMED OUT after 547s]: cd /Users/valerykornienko/workspace/java-premium/dlis-candidate-service
+export DOCKER_HOST='unix:///var/folders/pr/4vxf3z193wqfpl7gx0jvy3h00000gn/T/podman/podman-machine-default-api.sock'
+podman manifest rm localhost/dlis-candidate-service:multi >/dev/null 2>&1
+podman build --platform linux/amd64,linux/s390x --manifest localhost/dlis-candidate-service:multi -f Dockerfile . 2>&1 | grep -E "^STEP|Error|error|SCC layer|Successfully|^[0-9a-f]{64}" | tail -12
+podman manifest inspect localhost/dlis-candidate-service:multi | python3 -c "import sys,json;m=json.load(sys.stdin);print([(x['platform']['os'],x['platform']['architecture']) for x in m['manifests']])"
+
++ curl --silent --output /dev/null --show-error --fail --max-time 5 localhost:9080/
++ curl --silent --output /dev/null --show-error --fail --max-time 5 localhost:9080/openapi
++ echo 'SCC layer is 64% full.'
+21d5be3e22e2bc1c25e803cefa9efb44042b7c8df65910cb1ef8061d232272f5
++ echo 'Calculating SCC layer upper bound, starting with initial size 80m.'
++ curl --silent --output /dev/null --show-error --fail --max-time 5 localhost:9080/
++ curl --silent --output /dev/null --show-error --fail --max-time 5 localhost:9080/openapi
++ echo 'SCC layer is 30% full. Destroying layer.'
++ curl --silent --output /dev/null --show-error --fail --max-time 5 localhost:9080/
++ curl --silent --output /dev/null --show-error --fail --max-time 5 localhost:9080/openapi
++ echo 'SCC layer is 61% full.'
+d5ceb33fe2e7c944693ce360a66f789c624371c1ba089138cbcaf801621b8966
+
+
+The emulated s390x build is slow but looks complete, since two image IDs were produced. I'll check the manifest.
+
+The multi-arch manifest has both linux/amd64 and linux/s390x entries. I'm running the s390x variant to confirm Liberty starts there, in the background because of emulation.
+
+Podman looked up my host architecture in the manifest list instead of honouring --platform. I'll check how the arch images are stored and run the s390x one directly.
+
+
+please skip tests and proceed to arranging openshift rollout
+
+Skipping the s390x smoke test. I've already verified the amd64 Liberty image starts, serves the health endpoints and enforces auth, and the multi-arch manifest builds with both architectures. Cleaning up, then on to the OpenShift rollout.
+
+you may skip image building and focus only on building yaml and playbooks
+
+The gateway routing is confirmed: each path reaches the right backend, and payment-recorded and unknown paths return 404. I'm cleaning up the test containers and then moving to YAML and playbooks only.
+
+
+
+Next is the Ansible side. I'm putting the playbooks at the top of deploy/ansible so repo-relative paths stay simple, then adding the roles.
+
+The build role has dead placeholder tasks from a fumbled draft. I'm rewriting it cleanly before moving on.
+
+Now the dlis_openshift tasks: render, apply in dependency order, wait for rollout, roll back on failure, and prune stale deployments when the mode changes.
+
+Next are the verify role and the playbooks (site.yml, rollback.yml, render.yml).
+
+My earlier find -delete removed dlis_verify/tasks, which was empty at the time, and the verify role never got written. I'm recreating the directory and the two files.
+
+Syntax checks pass. Next is the offline render of the manifests in both deployment modes, with each document validated against the Kubernetes schema.
+
+macOS sed -i needs an explicit empty suffix, so the first sed failed. I'm using Python for the edit instead.
+
+A self-referencing variable in my task vars caused that recursion. I'm fixing it by giving the template a distinct variable name.
+
+Both clusters render. Now I'm validating every document against the Kubernetes schema and linting, in both modes. The OpenShift Route isn't in the core schema, so I'll check it separately.
+
+The manifests render and validate in both modes: 56 documents in unified mode and 80 in per-arch mode, with none invalid. Linting is next.
+
+Those are all the no-role-prefix naming rule, which is stylistic and conflicts with my deliberate shared dlis_ namespace. I'll scope the lint to skip it, then check for anything substantive.
+
+
+

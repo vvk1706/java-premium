@@ -1,0 +1,11 @@
+---
+dlis_k8s_auth:
+  kubeconfig: "{{ lookup('env', 'KUBECONFIG') | default('~/.kube/config', true) }}"
+  context: dlis-z
+dlis_node_arches: [s390x]
+dlis_route_host: dlis.apps.z.example.com
+dlis_db2_host: db2z.internal.example.com  # same LPAR, via the internal network / HiperSockets
+# Z clusters usually have fewer, bigger workers: run more replicas per node of the hot service
+dlis_replicas_by_arch:
+  s390x:
+    licensing: 3

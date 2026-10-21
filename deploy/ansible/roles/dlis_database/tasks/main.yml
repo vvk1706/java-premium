@@ -1,0 +1,31 @@
+---
+# Runs on host group db2_admin (a machine with the Db2 CLP). The DDL is NOT idempotent
+# (CREATE TABLE) — run it only for the first install or for a new, additive migration script.
+# The services share the existing DLIS schema with the legacy monolith / CICS bridge, so this
+# role never drops anything.
+- name: Copy the DDL for every service
+  ansible.builtin.copy:
+    src: "{{ dlis_repo_root }}/dlis-{{ item }}-service/src/main/resources/db2/DLIS-{{ item | upper }}-TABLES.sql"
+    dest: "/tmp/DLIS-{{ item | upper }}-TABLES.sql"
+    mode: "0600"
+  loop: "{{ dlis_service_order }}"
+
+- name: Apply the DDL with the Db2 CLP
+  ansible.builtin.shell: |
+    set -e
+    db2 connect to {{ dlis_db2_name }}
+    db2 set schema {{ dlis_db2_schema }}
+    db2 -tvf /tmp/DLIS-{{ item | upper }}-TABLES.sql -z /tmp/DLIS-{{ item | upper }}-TABLES.log
+    db2 connect reset
+  args:
+    executable: /bin/bash
+  loop: "{{ dlis_service_order }}"
+  changed_when: true
+  register: dlis_ddl
+  failed_when: dlis_ddl.rc != 0 and ('SQL0601N' not in dlis_ddl.stdout)
+
+- name: Remove copied DDL
+  ansible.builtin.file:
+    path: "/tmp/DLIS-{{ item | upper }}-TABLES.sql"
+    state: absent
+  loop: "{{ dlis_service_order }}"

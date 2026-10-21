@@ -1,0 +1,28 @@
+---
+# Rolls DLIS out to ONE OpenShift cluster (the current inventory host).
+- name: Compute the scale targets (one per service, or one per service and architecture)
+  ansible.builtin.set_fact:
+    dlis_scale_targets: >-
+      {%- set out = [] -%}
+      {%- for svc in dlis_service_order -%}
+      {%- set s = dlis_services[svc] -%}
+      {%- if dlis_deployment_mode == 'per-arch' -%}
+      {%- for arch in dlis_node_arches -%}
+      {%- set n = dlis_replicas_by_arch.get(arch, {}).get(svc, s.replicas) -%}
+      {%- set _ = out.append({'svc': svc, 'arch': arch, 'name': 'dlis-' ~ svc ~ '-service-' ~ arch, 'min': n, 'max': s.hpa_max}) -%}
+      {%- endfor -%}
+      {%- else -%}
+      {%- set _ = out.append({'svc': svc, 'name': 'dlis-' ~ svc ~ '-service', 'min': s.replicas, 'max': s.hpa_max}) -%}
+      {%- endif -%}
+      {%- endfor -%}
+      {{ out }}
+
+- name: Render the manifests
+  ansible.builtin.include_tasks: render.yml
+
+- name: Stop after rendering
+  ansible.builtin.meta: end_host
+  when: dlis_render_only | bool
+
+- name: Apply, roll out and verify (rolls back on failure)
+  ansible.builtin.include_tasks: apply.yml

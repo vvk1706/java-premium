@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ dlis_namespace }}
+  labels:
+    app.kubernetes.io/part-of: dlis
+    # Pod Security Admission: Liberty runs as a non-root arbitrary UID with no extra capabilities.
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest

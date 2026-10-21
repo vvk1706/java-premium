@@ -1,0 +1,158 @@
+---
+- name: Remember which Deployments already exist (rollback candidates)
+  kubernetes.core.k8s_info:
+    api_version: apps/v1
+    kind: Deployment
+    namespace: "{{ dlis_namespace }}"
+    label_selectors:
+      - app.kubernetes.io/part-of=dlis
+  register: dlis_existing
+  failed_when: false
+
+- name: Index existing Deployments
+  ansible.builtin.set_fact:
+    dlis_existing_names: "{{ dlis_existing.resources | default([]) | map(attribute='metadata.name') | list }}"
+
+- name: Namespace
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ dlis_render_dir }}/{{ inventory_hostname }}/namespace.yml"
+  when: dlis_create_namespace | bool
+
+- name: Service account, config and secrets
+  kubernetes.core.k8s:
+    state: present
+    src: "{{ dlis_render_dir }}/{{ inventory_hostname }}/{{ item }}.yml"
+  loop: [serviceaccount, configmap, secrets]
+  no_log: "{{ item == 'secrets' }}"
+  loop_control:
+    label: "{{ item }}"
+
+- name: Read resourceVersions of config and secrets (rolls pods when they change; leaks nothing)
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: "{{ item.kind }}"
+    name: "{{ item.name }}"
+    namespace: "{{ dlis_namespace }}"
+  loop:
+    - { kind: ConfigMap, name: dlis-config }
+    - { kind: Secret, name: dlis-db2 }
+    - { kind: Secret, name: dlis-service-account }
+    - { kind: Secret, name: dlis-registry }
+  register: dlis_versions
+  no_log: true
+
+- name: Compute the config checksum
+  ansible.builtin.set_fact:
+    dlis_config_checksum: >-
+      {{ dlis_versions.results | map(attribute='resources') | flatten
+         | map(attribute='metadata.resourceVersion') | join('-') | hash('sha1') }}
+
+- name: Re-render the Deployments with the checksum annotation
+  ansible.builtin.template:
+    src: deployment.yml.j2
+    dest: "{{ dlis_render_dir }}/{{ inventory_hostname }}/deployment-{{ item.name }}.yml"
+    mode: "0600"
+  vars:
+    svc: "{{ item.svc }}"
+    arch: "{{ item.arch | default('') }}"
+    # Only pin replicas on first creation; afterwards the HPA owns the replica count.
+    dlis_pin_replicas: "{{ item.name not in dlis_existing_names }}"
+  loop: "{{ dlis_scale_targets }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Apply and roll out services (rolls back on failure)
+  block:
+    - name: Services
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ dlis_render_dir }}/{{ inventory_hostname }}/service.yml"
+
+    # Strictly in dependency order: candidate -> licensing -> payment. Each Deployment waits
+    # until its rollout is complete before the next one is touched.
+    - name: Roll out the services one by one and wait for each rollout
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ dlis_render_dir }}/{{ inventory_hostname }}/deployment-{{ item.name }}.yml"
+        wait: true            # for a Deployment: updated == ready == available == spec.replicas
+        wait_timeout: "{{ dlis_rollout_timeout_seconds }}"
+      loop: "{{ dlis_scale_targets }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: dlis_rollout
+
+    - name: Gateway
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ dlis_render_dir }}/{{ inventory_hostname }}/gateway.yml"
+        wait: true
+        wait_timeout: "{{ dlis_rollout_timeout_seconds }}"
+
+    - name: Autoscaling and disruption budgets
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ dlis_render_dir }}/{{ inventory_hostname }}/autoscaling.yml"
+
+    - name: Network policies
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ dlis_render_dir }}/{{ inventory_hostname }}/networkpolicy.yml"
+
+    - name: Route
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ dlis_render_dir }}/{{ inventory_hostname }}/route.yml"
+
+    - name: ServiceMonitors
+      kubernetes.core.k8s:
+        state: present
+        src: "{{ dlis_render_dir }}/{{ inventory_hostname }}/servicemonitor.yml"
+      when: dlis_create_servicemonitor | bool
+
+  rescue:
+    - name: Roll back the Deployments that existed before this run
+      kubernetes.core.k8s_rollback:
+        api_version: apps/v1
+        kind: Deployment
+        name: "{{ item.name }}"
+        namespace: "{{ dlis_namespace }}"
+      loop: "{{ dlis_scale_targets | selectattr('name', 'in', dlis_existing_names) | list }}"
+      loop_control:
+        label: "{{ item.name }}"
+      failed_when: false
+      when: dlis_rollback_on_failure | bool
+
+    - name: Fail the play for this cluster
+      ansible.builtin.fail:
+        msg: >-
+          Rollout to {{ inventory_hostname }} failed
+          ({{ ansible_failed_result.msg | default('see previous task') }}).
+          {{ 'Existing Deployments were rolled back.' if (dlis_rollback_on_failure | bool) else 'Rollback is disabled.' }}
+
+- name: Work out Deployments left over from the other deployment mode
+  ansible.builtin.set_fact:
+    dlis_stale_names: >-
+      {{ dlis_existing_names | difference(dlis_scale_targets | map(attribute='name') | list) }}
+
+- name: Prune stale Deployments, autoscalers and disruption budgets
+  kubernetes.core.k8s:
+    state: absent
+    api_version: "{{ item.0.api }}"
+    kind: "{{ item.0.kind }}"
+    name: "{{ item.1 }}"
+    namespace: "{{ dlis_namespace }}"
+  loop: >-
+    {{ [{'api': 'apps/v1', 'kind': 'Deployment'},
+        {'api': 'autoscaling/v2', 'kind': 'HorizontalPodAutoscaler'},
+        {'api': 'policy/v1', 'kind': 'PodDisruptionBudget'}]
+       | product(dlis_stale_names) | list }}
+  loop_control:
+    label: "{{ item.0.kind }}/{{ item.1 }}"
+  when: dlis_stale_names | length > 0
+
+- name: Remove rendered manifests (they contain secrets)
+  ansible.builtin.file:
+    path: "{{ dlis_render_dir }}/{{ inventory_hostname }}"
+    state: absent
+  when: not (dlis_keep_rendered | bool)

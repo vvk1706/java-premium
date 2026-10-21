@@ -1,0 +1,45 @@
+---
+# Checks against one OpenShift cluster (host group "openshift_clusters").
+- name: Read cluster nodes
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Node
+  register: dlis_nodes
+
+- name: Index node architectures
+  ansible.builtin.set_fact:
+    dlis_node_arch_map: "{{ dlis_node_arch_map | default({}) | combine({item.metadata.name: item.metadata.labels['kubernetes.io/arch'] | default('unknown')}) }}"
+  loop: "{{ dlis_nodes.resources }}"
+  loop_control:
+    label: "{{ item.metadata.name }}"
+
+- name: Require schedulable workers for every requested architecture
+  ansible.builtin.assert:
+    that: dlis_node_arch_map.values() | select('equalto', item) | list | length > 0
+    fail_msg: >-
+      Cluster {{ inventory_hostname }} has no {{ item }} node (found: {{ dlis_node_arch_map.values() | unique | list }}).
+      Fix dlis_node_arches for this cluster.
+    quiet: true
+  loop: "{{ dlis_node_arches }}"
+
+- name: Report cluster architectures
+  ansible.builtin.debug:
+    msg: "{{ inventory_hostname }}: node architectures {{ dlis_node_arch_map.values() | unique | list }}; DLIS will use {{ dlis_node_arches }} ({{ dlis_deployment_mode }} mode)"
+
+- name: Check the target namespace
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Namespace
+    name: "{{ dlis_namespace }}"
+  register: dlis_ns
+
+- name: Namespace must exist or be creatable
+  ansible.builtin.assert:
+    that: (dlis_ns.resources | length > 0) or (dlis_create_namespace | bool)
+    fail_msg: "Namespace {{ dlis_namespace }} does not exist and dlis_create_namespace is false"
+    quiet: true
+
+- name: Deployment mode must be known
+  ansible.builtin.assert:
+    that: dlis_deployment_mode in ['unified', 'per-arch']
+    quiet: true

@@ -1,0 +1,90 @@
+---
+# candidate-service -> licensing-service (-> candidate-service) -> payment-service (-> licensing-service)
+- name: Create a candidate (candidate-service)
+  ansible.builtin.uri:
+    url: "{{ dlis_public_url }}/candidates"
+    method: POST
+    body_format: json
+    body:
+      firstName: Smoke
+      lastName: Test
+      dateOfBirth: "1990-01-01"
+      idNumber: "SMOKE{{ lookup('pipe', 'date +%s') }}"
+      addressLine1: "1 Test Street"
+      city: Testville
+      stateProvince: TS
+      postalCode: "0000"
+      country: ZZ
+      createdBy: smoke
+    url_username: "{{ dlis_smoke_user }}"
+    url_password: "{{ dlis_smoke_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ dlis_validate_certs }}"
+    status_code: 201
+  register: dlis_cand
+  no_log: true
+
+- name: Create an application (licensing-service calls candidate-service)
+  ansible.builtin.uri:
+    url: "{{ dlis_public_url }}/applications"
+    method: POST
+    body_format: json
+    body: { candidateId: "{{ dlis_cand.json.id }}", licenseType: L, createdBy: smoke }
+    url_username: "{{ dlis_smoke_user }}"
+    url_password: "{{ dlis_smoke_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ dlis_validate_certs }}"
+    status_code: 201
+  register: dlis_app
+  no_log: true
+
+- name: Eligibility and history checks (licensing-service)
+  ansible.builtin.uri:
+    url: "{{ dlis_public_url }}/applications/{{ dlis_app.json.id }}/{{ item }}"
+    method: POST
+    body_format: json
+    body: { checkedBy: smoke }
+    url_username: "{{ dlis_smoke_user }}"
+    url_password: "{{ dlis_smoke_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ dlis_validate_certs }}"
+    status_code: 200
+  loop: [eligibility-check, history-check]
+  no_log: true
+
+- name: Pay (payment-service calls licensing-service — saga)
+  ansible.builtin.uri:
+    url: "{{ dlis_public_url }}/applications/{{ dlis_app.json.id }}/payment"
+    method: POST
+    body_format: json
+    body:
+      candidateId: "{{ dlis_cand.json.id }}"
+      paymentMethod: CC
+      paymentReference: "SMOKE{{ dlis_app.json.id }}"
+      processedBy: smoke
+    url_username: "{{ dlis_smoke_user }}"
+    url_password: "{{ dlis_smoke_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ dlis_validate_certs }}"
+    status_code: 200
+  register: dlis_pay
+  no_log: true
+
+- name: Read the application back from licensing-service
+  ansible.builtin.uri:
+    url: "{{ dlis_public_url }}/applications/{{ dlis_app.json.id }}"
+    url_username: "{{ dlis_smoke_user }}"
+    url_password: "{{ dlis_smoke_password }}"
+    force_basic_auth: true
+    validate_certs: "{{ dlis_validate_certs }}"
+    return_content: true
+  register: dlis_app_after
+  no_log: true
+
+- name: Assert the saga completed
+  ansible.builtin.assert:
+    that:
+      - dlis_app_after.json.applicationStatus == 'PA'
+      - dlis_app_after.json.paymentStatus == 'P'
+      - dlis_pay.json.receiptNumber is match('^RCP')
+    quiet: true

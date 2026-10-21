@@ -21,6 +21,11 @@
     <module>dlis-cics-bridge</module>
     <module>dlis-web</module>
     <module>dlis-ear</module>
+    <!-- Liberty/OpenShift microservices (strangler decomposition of the monolith) -->
+    <module>dlis-service-commons</module>
+    <module>dlis-candidate-service</module>
+    <module>dlis-licensing-service</module>
+    <module>dlis-payment-service</module>
   </modules>
 
   <properties>
@@ -39,6 +44,8 @@
     <junit.version>5.10.0</junit.version>
     <mockito.version>5.24.0</mockito.version>
     <jacoco.version>0.8.15</jacoco.version>
+    <mp.health.version>3.1</mp.health.version>
+    <jersey.version>2.41</jersey.version>
   </properties>
 
   <dependencyManagement>
@@ -65,6 +72,36 @@
         <artifactId>jcc</artifactId>
         <version>${db2.jdbc.version}</version>
         <scope>provided</scope>
+      </dependency>
+
+      <!-- MicroProfile Health (javax namespace, Liberty mpHealth-3.1) -->
+      <dependency>
+        <groupId>org.eclipse.microprofile.health</groupId>
+        <artifactId>microprofile-health-api</artifactId>
+        <version>${mp.health.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <!-- JAX-RS runtime for unit tests only (Liberty provides CXF at runtime) -->
+      <dependency>
+        <groupId>org.glassfish.jersey.core</groupId>
+        <artifactId>jersey-common</artifactId>
+        <version>${jersey.version}</version>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.glassfish.jersey.inject</groupId>
+        <artifactId>jersey-hk2</artifactId>
+        <version>${jersey.version}</version>
+        <scope>test</scope>
+      </dependency>
+
+      <!-- JSON-P implementation for unit tests only (Liberty provides jsonp-1.1 at runtime) -->
+      <dependency>
+        <groupId>org.glassfish</groupId>
+        <artifactId>jakarta.json</artifactId>
+        <version>1.1.6</version>
+        <scope>test</scope>
       </dependency>
 
       <!-- Logging -->
@@ -102,6 +139,11 @@
       <dependency>
         <groupId>com.dlis</groupId>
         <artifactId>dlis-cics-bridge</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.dlis</groupId>
+        <artifactId>dlis-service-commons</artifactId>
         <version>${project.version}</version>
       </dependency>
     </dependencies>

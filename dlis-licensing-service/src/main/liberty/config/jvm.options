@@ -1,0 +1,5 @@
+# Container-aware heap: leave headroom for metaspace / native / shared-class cache
+-XX:MaxRAMPercentage=70
+-XX:InitialRAMPercentage=40
+-Xtune:virtualized
+-Dfile.encoding=UTF-8

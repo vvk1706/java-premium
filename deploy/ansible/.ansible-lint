@@ -1,0 +1,8 @@
+---
+profile: production
+offline: true
+skip_list:
+  - var-naming[no-role-prefix]   # roles intentionally share the dlis_ variable namespace
+exclude_paths:
+  - .rendered/
+  - ../.rendered/

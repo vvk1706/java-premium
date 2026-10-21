@@ -1,0 +1,175 @@
+{# Variables: svc (key in dlis_services), arch ('' = one multi-arch Deployment, else per-arch mode) #}
+{% set arch = arch | default('') %}
+{% set s = dlis_services[svc] %}
+{% set name = 'dlis-' ~ svc ~ '-service' %}
+{% set dep_name = name ~ ('-' ~ arch if arch | length > 0 else '') %}
+{% set replicas = (dlis_replicas_by_arch.get(arch, {}).get(svc, s.replicas) if arch | length > 0 else s.replicas) %}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ dep_name }}
+  namespace: {{ dlis_namespace }}
+  labels:
+    app.kubernetes.io/name: {{ name }}
+    app.kubernetes.io/component: {{ svc }}
+    app.kubernetes.io/part-of: dlis
+    app.kubernetes.io/version: {{ dlis_version | to_json }}
+{% if arch | length > 0 %}
+    dlis/arch: {{ arch }}
+{% endif %}
+spec:
+{% if dlis_pin_replicas | default(true) %}
+  replicas: {{ replicas }}
+{% endif %}
+  revisionHistoryLimit: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ name }}
+{% if arch | length > 0 %}
+      dlis/arch: {{ arch }}
+{% endif %}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ name }}
+        app.kubernetes.io/component: {{ svc }}
+        app.kubernetes.io/part-of: dlis
+{% if arch | length > 0 %}
+        dlis/arch: {{ arch }}
+{% endif %}
+      annotations:
+        # Config/secret changes roll the pods
+        dlis/config-checksum: {{ dlis_config_checksum | default('render-only') }}
+    spec:
+      serviceAccountName: dlis
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 45
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      affinity:
+{% if arch | length == 0 %}
+        # Unified multi-arch mode: allowed architectures are enforced by node affinity ...
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values: {{ dlis_node_arches | to_json }}
+                  - key: kubernetes.io/os
+                    operator: In
+                    values: [linux]
+{% else %}
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values: [{{ arch }}]
+                  - key: kubernetes.io/os
+                    operator: In
+                    values: [linux]
+{% endif %}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: {{ name }}
+{% if arch | length == 0 and dlis_node_arches | length > 1 %}
+      # ... and a spread constraint keeps replicas balanced across architectures (loss of a whole
+      # architecture, e.g. a Z maintenance window, must not take the service down).
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/arch
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ name }}
+{% endif %}
+      containers:
+        - name: liberty
+          image: "{{ dlis_registry_pull }}/{{ name }}:{{ dlis_image_tag }}"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 9080
+          envFrom:
+            - configMapRef:
+                name: dlis-config
+            - secretRef:
+                name: dlis-db2
+{% if svc in ['licensing', 'payment'] %}
+            - secretRef:
+                name: dlis-service-account
+{% endif %}
+          env:
+            - name: WLP_LOGGING_CONSOLE_FORMAT
+              value: JSON
+{% if dlis_db2_truststore_b64 | length > 0 %}
+            - name: DLIS_TRUSTSTORE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: dlis-db2-truststore
+                  key: TRUSTSTORE_PASSWORD
+            - name: JVM_ARGS
+              value: "-Djavax.net.ssl.trustStore=/config/resources/db2-truststore/truststore.p12 -Djavax.net.ssl.trustStoreType=PKCS12 -Djavax.net.ssl.trustStorePassword=$(DLIS_TRUSTSTORE_PASSWORD)"
+{% endif %}
+          resources:
+            requests:
+              cpu: {{ s.cpu_request | to_json }}
+              memory: {{ s.memory_request | to_json }}
+            limits:
+              cpu: {{ s.cpu_limit | to_json }}
+              memory: {{ s.memory_limit | to_json }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: [ALL]
+          startupProbe:
+            httpGet: { path: /health/started, port: http }
+            periodSeconds: 5
+            failureThreshold: 36          # up to 3 minutes (emulated/loaded nodes, slow Db2 TLS)
+          livenessProbe:
+            httpGet: { path: /health/live, port: http }
+            periodSeconds: 15
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /health/ready, port: http }
+            periodSeconds: 10
+            timeoutSeconds: 4
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]  # let the router drop the endpoint before SIGTERM
+          volumeMounts:
+            - name: registry
+              mountPath: /config/configDropins/overrides/registry.xml
+              subPath: registry.xml
+              readOnly: true
+{% if dlis_db2_truststore_b64 | length > 0 %}
+            - name: db2-truststore
+              mountPath: /config/resources/db2-truststore
+              readOnly: true
+{% endif %}
+      volumes:
+        - name: registry
+          secret:
+            secretName: dlis-registry
+{% if dlis_db2_truststore_b64 | length > 0 %}
+        - name: db2-truststore
+          secret:
+            secretName: dlis-db2-truststore
+{% endif %}

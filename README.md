@@ -51,3 +51,18 @@ mvn clean test
 # Package EAR for Liberty deployment
 mvn package
 ```
+
+---
+
+## ☁️ Liberty microservices on OpenShift (x86 and IBM Z)
+
+The monolith is decomposed into three Liberty microservices (`dlis-candidate-service`,
+`dlis-licensing-service`, `dlis-payment-service`, sharing `dlis-service-commons`) behind an nginx gateway
+that keeps the `/dlis/api/v1` URL contract. A multi-arch (`linux/amd64` + `linux/s390x`) image is built per
+service and rolled out by an Ansible pipeline — see [`deploy/ansible/README.md`](deploy/ansible/README.md) and
+`reports/05-liberty-openshift-modernization.html`. `dlis-web`, `dlis-ear` and `dlis-cics-bridge` stay in place
+as the legacy/rollback path.
+
+```bash
+ansible-playbook -i deploy/ansible/inventories/example deploy/ansible/render.yml   # offline manifest rendering
+```

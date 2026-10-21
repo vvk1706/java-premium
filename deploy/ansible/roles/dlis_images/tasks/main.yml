@@ -1,0 +1,76 @@
+---
+# One multi-arch manifest list per service: {{ dlis_registry_push }}/dlis-<svc>-service:<tag>
+# containing linux/amd64 and linux/s390x. Podman builds the foreign architecture through qemu
+# user-mode emulation unless the pipeline runs on (or has a remote builder for) that architecture.
+- name: Log in to the registry
+  ansible.builtin.command:
+    argv:
+      - podman
+      - login
+      - "{{ dlis_registry_push.split('/')[0] }}"
+      - --username
+      - "{{ dlis_registry_username }}"
+      - --password-stdin
+    stdin: "{{ dlis_registry_password }}"
+  no_log: true
+  changed_when: true
+  when: dlis_registry_username | length > 0
+
+- name: Remove a stale local manifest of the same tag
+  ansible.builtin.command: "podman manifest rm {{ dlis_registry_push }}/dlis-{{ item }}-service:{{ dlis_image_tag }}"
+  loop: "{{ dlis_service_order }}"
+  register: dlis_manifest_rm
+  failed_when: false
+  changed_when: dlis_manifest_rm.rc == 0
+
+- name: Build the multi-arch image of every service
+  ansible.builtin.command:
+    argv:
+      - podman
+      - build
+      - --platform
+      - "{{ dlis_platforms | join(',') }}"
+      - --manifest
+      - "{{ dlis_registry_push }}/dlis-{{ item }}-service:{{ dlis_image_tag }}"
+      - --build-arg
+      - "LIBERTY_IMAGE={{ dlis_liberty_image }}"
+      - --build-arg
+      - "VERSION={{ dlis_version }}"
+      - -f
+      - Dockerfile
+      - .
+    chdir: "{{ dlis_repo_root }}/dlis-{{ item }}-service"
+  loop: "{{ dlis_service_order }}"
+  changed_when: true
+
+- name: Push the manifest lists
+  ansible.builtin.command:
+    argv:
+      - podman
+      - manifest
+      - push
+      - --all
+      - "{{ dlis_registry_push }}/dlis-{{ item }}-service:{{ dlis_image_tag }}"
+      - "docker://{{ dlis_registry_push }}/dlis-{{ item }}-service:{{ dlis_image_tag }}"
+  loop: "{{ dlis_service_order }}"
+  changed_when: true
+
+- name: Inspect the pushed manifest lists
+  ansible.builtin.command: >-
+    skopeo inspect --raw docker://{{ dlis_registry_push }}/dlis-{{ item }}-service:{{ dlis_image_tag }}
+  loop: "{{ dlis_service_order }}"
+  register: dlis_pushed
+  changed_when: false
+
+- name: Every manifest list must carry every requested architecture
+  ansible.builtin.assert:
+    that: >-
+      dlis_platforms
+      | map('regex_replace', '^linux/', '')
+      | difference((item.stdout | from_json).manifests | map(attribute='platform.architecture') | list)
+      | length == 0
+    fail_msg: "{{ item.item }} manifest list misses a requested architecture"
+    quiet: true
+  loop: "{{ dlis_pushed.results }}"
+  loop_control:
+    label: "{{ item.item }}"

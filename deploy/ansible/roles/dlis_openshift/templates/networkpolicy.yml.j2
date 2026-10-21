@@ -1,0 +1,101 @@
+# Default deny, then open exactly the paths of the call graph:
+#   router -> gateway -> {candidate, licensing, payment};  licensing -> candidate;  payment -> licensing
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dlis-default-deny-ingress
+  namespace: {{ dlis_namespace }}
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dlis-allow-router-to-gateway
+  namespace: {{ dlis_namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: dlis-gateway
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              {{ dlis_ingress_namespace_label.split('=')[0] }}: {{ dlis_ingress_namespace_label.split('=')[1] }}
+      ports:
+        - { protocol: TCP, port: 8080 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dlis-allow-gateway-to-services
+  namespace: {{ dlis_namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: dlis
+    matchExpressions:
+      - { key: app.kubernetes.io/component, operator: In, values: {{ dlis_services.keys() | list | to_json }} }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: dlis-gateway
+      ports:
+        - { protocol: TCP, port: 9080 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dlis-allow-licensing-to-candidate
+  namespace: {{ dlis_namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: dlis-candidate-service
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: dlis-licensing-service
+      ports:
+        - { protocol: TCP, port: 9080 }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dlis-allow-payment-to-licensing
+  namespace: {{ dlis_namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: dlis-licensing-service
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: dlis-payment-service
+      ports:
+        - { protocol: TCP, port: 9080 }
+---
+# Kubelet probes and Prometheus scraping come from the node/monitoring namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: dlis-allow-monitoring
+  namespace: {{ dlis_namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/part-of: dlis
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              network.openshift.io/policy-group: monitoring

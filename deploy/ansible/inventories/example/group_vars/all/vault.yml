@@ -1,0 +1,14 @@
+---
+# DUMMY VALUES FOR THE EXAMPLE INVENTORY ONLY - never use them. Real environments: copy vault.example.yml and encrypt:  ansible-vault encrypt inventories/<env>/group_vars/all/vault.yml
+vault_db2_user: dlisapp
+vault_db2_password: dummy-pw
+vault_service_user: dlis-svc            # internal DLIS_SERVICE account used for service-to-service calls
+vault_service_password: dummy-service-pw
+vault_registry_username: ""
+vault_registry_password: ""
+# Liberty basicRegistry users for the demo / non-LDAP environments.
+# Production should replace the Secret with an <ldapRegistry> (or SAF registry on Z).
+vault_users:
+  - { name: officer1, password: dummy-pw, groups: [DlisOfficers] }
+  - { name: authority1, password: dummy-pw, groups: [DlisAuthority] }
+  - { name: admin1, password: dummy-pw, groups: [DlisAdmin] }

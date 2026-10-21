@@ -1,0 +1,12 @@
+---
+# Offline rendering of the OpenShift manifests (no cluster, no build): for review, GitOps, CI linting.
+#   ansible-playbook -i inventories/example render.yml
+# Output: deploy/.rendered/<cluster>/*.yml   (git-ignored; contains secrets!)
+- name: Render manifests only
+  hosts: openshift_clusters
+  gather_facts: false
+  vars:
+    dlis_render_only: true
+    dlis_keep_rendered: true
+  roles:
+    - role: dlis_openshift

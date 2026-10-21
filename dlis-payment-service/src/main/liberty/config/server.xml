@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<server description="DLIS Payment and fee service">
+
+  <!--
+    Containerised Liberty (OpenShift, linux/amd64 and linux/s390x from one multi-arch image).
+    Everything environment-specific is a variable overridable by an environment variable
+    of the same name (ConfigMap / Secret in the Deployment). Nothing here is architecture specific.
+  -->
+
+  <featureManager>
+    <feature>webProfile-8.0</feature>   <!-- servlet-4.0, jaxrs-2.1, cdi-2.0, ejbLite-3.2, jsonb/jsonp, jdbc -->
+    <feature>jdbc-4.2</feature>
+    <feature>appSecurity-3.0</feature>
+    <feature>mpHealth-3.1</feature>
+    <feature>mpMetrics-3.0</feature>
+  </featureManager>
+
+  <variable name="DB2_HOST"     defaultValue="db2.dlis.internal"/>
+  <variable name="DB2_PORT"     defaultValue="50000"/>
+  <variable name="DB2_DBNAME"   defaultValue="DLISDB"/>
+  <variable name="DB2_SCHEMA"   defaultValue="DLIS"/>
+  <variable name="DB2_SSL"      defaultValue="true"/>
+  <variable name="DB2_USER"     defaultValue="dlisapp"/>
+  <variable name="DB2_PASSWORD" defaultValue=""/>
+  <variable name="DB2_MAX_POOL" defaultValue="10"/>
+
+  <!-- HTTP only: TLS terminates at the Route / gateway. Probes and metrics use the same port. -->
+  <httpEndpoint id="defaultHttpEndpoint" host="*" httpPort="9080" accessLoggingRef="accessLogging"/>
+  <httpAccessLogging id="accessLogging" logFormat="%h %u %t &quot;%r&quot; %s %b %D"/>
+
+  <!-- ─── DB2 (Type 4 JCC driver, from the image's shared resources) ───────── -->
+  <library id="db2JccLib">
+    <fileset dir="${shared.resource.dir}/db2jcc" includes="db2jcc4.jar"/>
+  </library>
+
+  <!--
+    Non-XA on purpose: every service owns its tables and talks to exactly one database,
+    cross-service consistency is handled by an idempotent saga (REST), and an XA
+    transaction log on ephemeral pod storage would be a recovery hazard.
+  -->
+  <authData id="dlisDbAuth" user="${DB2_USER}" password="${DB2_PASSWORD}"/>
+
+  <dataSource id="dlisDS" jndiName="jdbc/dlisDS" type="javax.sql.DataSource"
+              containerAuthDataRef="dlisDbAuth">
+    <jdbcDriver libraryRef="db2JccLib"/>
+    <properties.db2.jcc
+      serverName="${DB2_HOST}"
+      portNumber="${DB2_PORT}"
+      databaseName="${DB2_DBNAME}"
+      currentSchema="${DB2_SCHEMA}"
+      driverType="4"
+      sslConnection="${DB2_SSL}"
+      fullyMaterializeLobData="false"
+      progressiveStreaming="2"/>
+    <connectionManager
+      maxPoolSize="${DB2_MAX_POOL}"
+      minPoolSize="1"
+      connectionTimeout="10s"
+      maxIdleTime="120s"
+      purgePolicy="FailingConnectionOnly"
+      agedTimeout="30m"/>
+  </dataSource>
+
+  <!-- ─── User registry ───────────────────────────────────────────────────────
+    Supplied by the Secret mounted at /config/configDropins/overrides/registry.xml
+    (basicRegistry from Ansible vault, or an <ldapRegistry> for production). -->
+
+  <!-- ─── Application ─────────────────────────────────────────────────────── -->
+  <webApplication id="dlis-payment-service" name="dlis-payment-service"
+                  location="dlis-payment-service.war" contextRoot="/dlis">
+    <application-bnd>
+      <security-role name="DLIS_OFFICER"><group name="DlisOfficers"/></security-role>
+      <security-role name="DLIS_AUTHORITY"><group name="DlisAuthority"/></security-role>
+      <security-role name="DLIS_ADMIN"><group name="DlisAdmin"/></security-role>
+      <security-role name="DLIS_SERVICE"><group name="DlisServices"/></security-role>
+    </application-bnd>
+  </webApplication>
+
+  <!-- ─── Observability ───────────────────────────────────────────────────── -->
+  <mpMetrics authentication="false"/>
+  <logging consoleLogLevel="INFO" consoleFormat="json"
+           consoleSource="message,trace,accessLog,ffdc"
+           traceSpecification="*=info" />
+
+  <!-- Quick shutdown on SIGTERM so rolling updates are fast -->
+  <applicationManager autoExpand="true"/>
+  <transaction totalTranLifetimeTimeout="120s" clientInactivityTimeout="30s"/>
+
+</server>

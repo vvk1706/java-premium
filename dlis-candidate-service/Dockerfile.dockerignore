@@ -1,0 +1,4 @@
+*
+!src/main/liberty
+!target/*.war
+!target/liberty-shared

@@ -1,0 +1,23 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: dlis
+  namespace: {{ dlis_namespace }}
+  labels: {{ dlis_common_labels | to_json }}
+  annotations:
+    haproxy.router.openshift.io/timeout: 60s
+    haproxy.router.openshift.io/disable_cookies: "true"
+spec:
+{% if dlis_route_host | length > 0 %}
+  host: {{ dlis_route_host }}
+{% endif %}
+  to:
+    kind: Service
+    name: dlis-gateway
+    weight: 100
+  port:
+    targetPort: http
+  tls:
+    termination: {{ dlis_route_tls_termination }}
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
