@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liberty on OpenShift Modernization Report</title>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --surface-color: #f7f8fa;
+      --border-color: #e5e7eb;
+      --text-color: #1f2328;
+      --muted-color: #57606a;
+      --accent-color: #3b82d4;
+      --success-color: #1a7f37;
+      --success-bg: #dafbe1;
+      --code-bg: #f6f8fa;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 32px 16px;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: var(--text-color);
+    }
+
+    .subtitle {
+      color: var(--muted-color);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 12px;
+      background-color: var(--success-bg);
+      color: var(--success-color);
+      margin-top: 8px;
+    }
+
+    .section {
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .meta-card {
+      background-color: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .meta-label {
+      font-size: 12px;
+      color: var(--muted-color);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .meta-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    ol.steps-list {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    ol.steps-list > li {
+      margin-bottom: 16px;
+    }
+
+    .step-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .step-desc {
+      color: var(--text-color);
+      margin-bottom: 8px;
+    }
+
+    pre, code {
+      font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+      font-size: 12px;
+    }
+
+    code {
+      background-color: var(--code-bg);
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    pre {
+      background-color: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: var(--surface-color);
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #fafbfc;
+    }
+
+    .status-ok {
+      color: var(--success-color);
+      font-weight: 600;
+    }
+
+    footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted-color);
+    }
+  
+    .badge.warn { background-color: #fff8c5; color: #7d4e00; }
+    .warn-box { background:#fff8c5; border:1px solid #d4a72c; border-radius:6px; padding:12px; margin:12px 0; }
+    .warn-box ul, ul.tight { margin: 6px 0 0 0; padding-left: 20px; }
+    .status-no { color:#9a6700; font-weight:600; }
+  </style>
+</head>
+<body>
+<div class="container">
+<header>
+  <h1>Liberty on OpenShift Modernization Report</h1>
+  <p class="subtitle">Driver License Issuance System (DLIS) &mdash; monolith to three Liberty microservices, x86 + IBM Z, Ansible pipeline</p>
+  <span class="badge">BUILD SUCCESS &bull; 432 TESTS PASSED</span>
+  <span class="badge warn">NOT RUN ON A LIVE CLUSTER</span>
+</header>
+
+<div class="section">
+  <h2>Summary</h2>
+  <div class="meta-grid">
+    <div class="meta-card"><div class="meta-label">Git Branch</div><div class="meta-value">liberty-openshift-modernization</div></div>
+    <div class="meta-card"><div class="meta-label">Based on</div><div class="meta-value">upgrade-to-java-17</div></div>
+    <div class="meta-card"><div class="meta-label">Microservices</div><div class="meta-value">3 + nginx gateway</div></div>
+    <div class="meta-card"><div class="meta-label">Runtime</div><div class="meta-value">WebSphere Liberty 25.0.0.12, Java 17 (OpenJ9)</div></div>
+    <div class="meta-card"><div class="meta-label">Platforms</div><div class="meta-value">linux/amd64, linux/s390x</div></div>
+    <div class="meta-card"><div class="meta-label">Pipeline</div><div class="meta-value">Ansible (<code>deploy/ansible</code>)</div></div>
+  </div>
+  <p>The Jakarta EE 8 monolith (<code>dlis-core</code>, <code>dlis-web</code>, <code>dlis-ear</code>, <code>dlis-cics-bridge</code>) was decomposed into
+  three Liberty microservices that own their data, plus a shared library and an nginx gateway that keeps the public <code>/dlis/api/v1</code> URL contract.
+  Each service has its own Liberty configuration, container image (multi-arch manifest list) and OpenShift manifests. An Ansible playbook
+  builds, publishes, deploys and verifies them on one or more clusters, x86 first and IBM Z second.</p>
+  <div class="warn-box"><strong>Read this first.</strong> Everything was built and unit tested, the manifests were rendered and schema-validated, and one
+  image (amd64) was started locally. <strong>Nothing was deployed to a real OpenShift cluster, to OpenShift on IBM Z, or against a real Db2.</strong> The s390x
+  image was built as part of a manifest list but never started. The Ansible apply, rollback, image-push and verify logic is untested. See
+  <a href="#validation">Validation</a>.</div>
+</div>
+
+<div class="section">
+  <h2>Decomposition: why three services</h2>
+  <p>Services were cut along <strong>data ownership and transactional cohesion</strong>, not along Java packages. The monolith used one XA
+  datasource and EJB transactions that spanned several tables, so each cut was tested against the question &ldquo;would this need a distributed transaction?&rdquo;</p>
+  <table><thead><tr><th>Service</th><th>Owns tables</th><th>Responsibility</th><th>Reason for the boundary</th></tr></thead><tbody><tr><td><code>dlis-candidate-service</code></td><td><code>CANDIDATE</code></td><td>Registration and lookup of candidates (PII)</td><td>PII is isolated: tighter access, audit and network policy; read-mostly, scales on its own</td></tr><tr><td><code>dlis-licensing-service</code></td><td><code>LICENSE_APPLICATION</code>, <code>DRIVING_HISTORY</code>, <code>ISSUED_LICENSE</code>, <code>AUTHORITY_USER</code></td><td>Application, eligibility, history check, approvals 1 and 2, issuance</td><td>Eligibility, history, approval and issue update one application aggregate in sequence; splitting them would need distributed transactions</td></tr><tr><td><code>dlis-payment-service</code></td><td><code>PAYMENT</code>, <code>LICENSE_FEE_SCHEDULE</code></td><td>Fee calculation and payment recording</td><td>Different change cadence and compliance scope (money); a clean seam through a single &ldquo;payment recorded&rdquo; event</td></tr></tbody></table>
+  <p><strong>Considered and rejected:</strong> one service per workflow step (5+ services) would split a single transactional aggregate and
+  produce chatty synchronous calls; keeping a single service would give no independent scaling or PII isolation. Three is the smallest count that
+  gives separate data ownership for the sensitive and the financial data without distributed transactions on the hot path.</p>
+  <p>The CICS programs (<code>CAND</code>, <code>APPL</code>, <code>PAAP</code>) call the services in-JVM, so the bridge stays on z/OS together with the legacy
+  modules. They are the strangler / rollback path and were not modified.</p>
+</div>
+
+<div class="section">
+  <h2>Architecture</h2>
+<pre>Client ──TLS──► OpenShift Route (edge) ──► dlis-gateway (nginx, unprivileged)
+                                              │ /dlis/api/v1/candidates                      ──► dlis-candidate-service ──► CANDIDATE
+                                              │ /dlis/api/v1/applications/{id}/payment        ──► dlis-payment-service   ──► PAYMENT, LICENSE_FEE_SCHEDULE
+                                              │ /dlis/api/v1/applications[/...]              ──► dlis-licensing-service ──► LICENSE_APPLICATION, DRIVING_HISTORY,
+                                              │                                                                            ISSUED_LICENSE, AUTHORITY_USER
+                                              └ any other path / payment-recorded            ──► 404
+
+licensing ──REST (CandidateGateway)───────► candidate   (date of birth + active flag only)
+payment   ──REST (ApplicationGateway)─────► licensing   (read application; POST payment-recorded = saga step)
+All three ──JDBC (non-XA, own datasource, authData)──► Db2 schema DLIS (shared schema, no cross-service foreign keys)</pre>
+  <h3>API routing</h3>
+  <table><thead><tr><th>Endpoint under <code>/dlis/api/v1</code></th><th>Served by</th></tr></thead><tbody><tr><td>POST /candidates, GET /candidates/{id}, GET /candidates</td><td>candidate</td></tr><tr><td>POST /applications, GET /applications/{id}</td><td>licensing</td></tr><tr><td>POST /applications/{id}/eligibility-check, /history-check</td><td>licensing</td></tr><tr><td>POST /applications/{id}/approval1, /approval2, /issue</td><td>licensing</td></tr><tr><td>POST /applications/{id}/payment</td><td>payment</td></tr><tr><td>POST /applications/{id}/payment-recorded</td><td>licensing, internal only: blocked at the gateway, <code>@RolesAllowed("DLIS_SERVICE")</code></td></tr></tbody></table>
+  <h3>Cross-service behaviour</h3>
+  <ul class="tight">
+    <li><strong>Payment saga:</strong> payment reads the application from licensing, records the payment, then calls <code>payment-recorded</code> on licensing. The callback is idempotent per <code>paymentReference</code>.</li>
+    <li><strong>Failure handling:</strong> a business rejection from licensing marks the payment transaction rollback-only; an unreachable service raises <code>RemoteServiceException</code> (rollback, HTTP 503).</li>
+    <li><strong>Security:</strong> Liberty <code>appSecurity-3.0</code> with the existing roles plus a new <code>DLIS_SERVICE</code> role (group <code>DlisServices</code>) for service-to-service calls. TLS ends at the Route, so the <code>CONFIDENTIAL</code> transport guarantee was removed from the services&rsquo; <code>web.xml</code>. Db2 credentials use <code>authData</code>.</li>
+    <li><strong>Observability:</strong> <code>mpHealth-3.1</code> (<code>/health/live</code>, <code>/health/ready</code> checks the database) and <code>mpMetrics-3.0</code>.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Multi-architecture strategy (x86 and IBM Z)</h2>
+  <table><thead><tr><th>Topic</th><th>Approach</th></tr></thead><tbody><tr><td>Java bytecode</td><td>The WARs are built once and are architecture independent.</td></tr><tr><td>Base image</td><td><code>icr.io/appcafe/websphere-liberty:25.0.0.12-full-java17-openj9-ubi</code> publishes amd64, s390x, ppc64le and arm64.</td></tr><tr><td>Images</td><td>One manifest list per service (<code>linux/amd64</code> + <code>linux/s390x</code>) built with <code>podman build --platform ... --manifest</code>; the foreign architecture needs qemu emulation or a remote builder.</td></tr><tr><td>Gateway</td><td><code>ubi9/nginx-124</code>, multi-arch, unprivileged, writable paths only under <code>/tmp</code> (arbitrary UID on OpenShift).</td></tr><tr><td><code>unified</code> mode (default)</td><td>One Deployment per service; node affinity on <code>kubernetes.io/arch</code> and a topology spread keep pods balanced in a mixed cluster. One HPA per service.</td></tr><tr><td><code>per-arch</code> mode</td><td>One Deployment (and HPA) per service and architecture, so Z and x86 are sized independently (<code>dlis_replicas_by_arch</code>).</td></tr><tr><td>Per-cluster values</td><td><code>host_vars/ocp-x86.yml</code> and <code>ocp-z.yml</code>: kube context, architectures, route host, Db2 host (Db2 for z/OS over the internal network on Z).</td></tr><tr><td>Rollout order</td><td><code>serial: 1</code>: x86 cluster first as canary, then Z; stops at the first failed cluster.</td></tr></tbody></table>
+</div>
+
+<div class="section">
+  <h2>Ansible pipeline</h2>
+  <p>Location: <code>deploy/ansible/</code>. Full usage is in <code>deploy/ansible/README.md</code>.</p>
+  <table><thead><tr><th>Stage</th><th>Role</th><th>Purpose</th></tr></thead><tbody><tr><td>1</td><td><code>dlis_preflight</code></td><td>Tools on the pipeline host, then cluster access and mandatory variables</td></tr><tr><td>2</td><td><code>dlis_build</code></td><td>Maven build and unit tests once (JDK 17+)</td></tr><tr><td>3</td><td><code>dlis_images</code></td><td>Multi-arch build, push, manifest-list verification with skopeo</td></tr><tr><td>4</td><td><code>dlis_database</code></td><td>Optional additive DDL per service via the Db2 CLP (off by default)</td></tr><tr><td>5</td><td><code>dlis_openshift</code></td><td>Render, apply, ordered rollout candidate &rarr; licensing &rarr; payment with wait, gateway, HPA/PDB, NetworkPolicies, Route, optional ServiceMonitors; automatic rollback on failure; prune of Deployments left from the other mode</td></tr><tr><td>6</td><td><code>dlis_verify</code></td><td>Deployments ready, pod architectures, health endpoints, gateway routing, optional end-to-end smoke test</td></tr></tbody></table>
+  <p>Other playbooks: <code>rollback.yml</code> (previous ReplicaSet, payment first) and <code>render.yml</code> (offline rendering into <code>deploy/.rendered/</code>, git-ignored because it contains secrets).</p>
+<pre>cd deploy/ansible
+ansible-galaxy collection install -r requirements.yml
+ansible-playbook -i inventories/example render.yml                        # offline, no cluster needed
+ansible-playbook -i inventories/&lt;env&gt; site.yml --ask-vault-pass            # full pipeline
+ansible-playbook -i inventories/&lt;env&gt; site.yml --limit ocp-z --tags deploy,verify
+ansible-playbook -i inventories/&lt;env&gt; site.yml -e dlis_deployment_mode=per-arch
+ansible-playbook -i inventories/&lt;env&gt; rollback.yml --limit ocp-z</pre>
+  <p>Kubernetes objects per cluster: Namespace, ServiceAccount, ConfigMap, Secrets (Db2, service account, registry, optional Db2 truststore and pull secret), 3 service Deployments + Services, gateway Deployment + Service,
+  HPA and PDB per Deployment, NetworkPolicies (default-deny ingress; allow router &rarr; gateway, gateway &rarr; services, licensing &rarr; candidate, payment &rarr; licensing, monitoring; no egress policy), Route (edge TLS).</p>
+</div>
+
+<div class="section">
+  <h2>Performed Steps</h2>
+  <ol class="steps-list">
+    <li><div class="step-title">1. Branch and baseline</div><div class="step-desc">Created <code>liberty-openshift-modernization</code> from <code>upgrade-to-java-17</code> (Java 17 is required by the Liberty java17 images). Baseline build: 187 tests in <code>dlis-core</code>, 25 in <code>dlis-cics-bridge</code>, all passing.</div></li>
+    <li><div class="step-title">2. Analysis and decomposition</div><div class="step-desc">Mapped tables, EJB transaction boundaries, REST resources and the CICS programs; chose the three-service split above.</div></li>
+    <li><div class="step-title">3. Shared library <code>dlis-service-commons</code></div><div class="step-desc"><code>ServiceResult</code>, <code>ApiErrors</code>, REST client helpers, <code>RemoteServiceException</code> + mapper, liveness and database readiness checks.</div></li>
+    <li><div class="step-title">4. Three Liberty services</div><div class="step-desc">Ported domain, DAOs, EJBs and JAX-RS resources into <code>dlis-candidate-service</code>, <code>dlis-licensing-service</code>, <code>dlis-payment-service</code>. Added <code>CandidateGateway</code>, <code>ApplicationGateway</code>, the payment saga and the <code>payment-recorded</code> callback. Per-service <code>server.xml</code>, <code>web.xml</code>, <code>jvm.options</code>, Dockerfile and split DDL (<code>DLIS-*-TABLES.sql</code>, no cross-service foreign keys). Tests were ported and extended.</div></li>
+    <li><div class="step-title">5. Parent POM</div><div class="step-desc">Added the four modules and the managed dependencies (MicroProfile Health 3.1; Jersey 2.41 and <code>jakarta.json</code> 1.1.6 for tests).</div></li>
+    <li><div class="step-title">6. Images</div><div class="step-desc">Wrote the Dockerfiles. Built the candidate image for amd64 and started it with podman; built a two-architecture manifest list. Per request, image building was not pursued further.</div></li>
+    <li><div class="step-title">7. OpenShift manifests</div><div class="step-desc">Jinja2 templates for all objects listed above, including the nginx gateway configuration (tested locally with nginx).</div></li>
+    <li><div class="step-title">8. Ansible pipeline</div><div class="step-desc">Playbooks <code>site.yml</code>, <code>rollback.yml</code>, <code>render.yml</code>, six roles, an example inventory with an x86 and a Z cluster. Fixed two bugs found while rendering (a colon in a task name, a recursive checksum variable).</div></li>
+    <li><div class="step-title">9. Lint and review fixes</div><div class="step-desc">Reached <code>ansible-lint</code> production profile with zero findings; named the rollout block; removed a masking <code>failed_when: false</code> and a redundant <code>when</code> on the manifest assertion; replicas are now pinned only when a Deployment is first created so that the HPA owns the count afterwards.</div></li>
+    <li><div class="step-title">10. Documentation and housekeeping</div><div class="step-desc"><code>deploy/ansible/README.md</code>, a section in the root <code>README.md</code>, <code>.gitignore</code> entries for <code>deploy/.rendered/</code> and for the two lint configuration dotfiles.</div></li>
+    <li><div class="step-title">11. Final verification</div><div class="step-desc"><code>mvn clean install</code> on the whole reactor, Ansible syntax checks, offline rendering of both clusters and schema validation of the output.</div></li>
+  </ol>
+</div>
+
+<div class="section" id="validation">
+  <h2>Validation</h2>
+  <h3>Test results (final <code>mvn clean install</code>)</h3>
+  <table><thead><tr><th>Module</th><th>Tests</th></tr></thead><tbody><tr><td><code>dlis-core</code></td><td>187</td></tr><tr><td><code>dlis-cics-bridge</code></td><td>25</td></tr><tr><td><code>dlis-service-commons</code></td><td>23</td></tr><tr><td><code>dlis-candidate-service</code></td><td>25</td></tr><tr><td><code>dlis-licensing-service</code></td><td>141</td></tr><tr><td><code>dlis-payment-service</code></td><td>31</td></tr><tr><td><strong>Total</strong></td><td><strong>432, 0 failures, 0 errors</strong></td></tr></tbody></table>
+  <h3>What was validated, and how</h3>
+  <table><thead><tr><th>Check</th><th>Evidence</th><th>Result</th></tr></thead><tbody><tr><td>Maven reactor builds, all unit tests pass</td><td>mvn clean install</td><td><span class="status-ok">&#x2714; done</span></td></tr><tr><td>Ansible syntax (site, rollback, render)</td><td>ansible-playbook --syntax-check</td><td><span class="status-ok">&#x2714; done</span></td></tr><tr><td>Ansible style</td><td>ansible-lint, production profile: 0 failures</td><td><span class="status-ok">&#x2714; done</span></td></tr><tr><td>Rendered manifests, x86 and Z, both modes</td><td>kubernetes-validate against Kubernetes 1.29, strict: 56 documents (unified) and 80 (per-arch), 0 invalid. Route and ServiceMonitor are checked for apiVersion only</td><td><span class="status-ok">&#x2714; done</span></td></tr><tr><td>Candidate image (amd64) starts</td><td>podman: Liberty ready in 1.7 s, <code>/health/live</code> 200, <code>/health/ready</code> 503 without Db2 (expected), unauthenticated API call 401, <code>/metrics</code> 200</td><td><span class="status-ok">&#x2714; done</span></td></tr><tr><td>Multi-arch manifest list builds</td><td>podman build --platform linux/amd64,linux/s390x --manifest</td><td><span class="status-ok">&#x2714; done</span></td></tr><tr><td>Gateway routing</td><td>nginx locally: /healthz 200; routes to candidate, licensing and payment correct; payment-recorded and unknown paths 404</td><td><span class="status-ok">&#x2714; done</span></td></tr></tbody></table>
+  <h3>What was NOT validated</h3>
+  <table><thead><tr><th>Item</th><th>Detail</th><th>Status</th></tr></thead><tbody><tr><td>Any deployment to a live OpenShift cluster (x86)</td><td>No reachable cluster; the local context refused connections</td><td><span class="status-no">&#x26A0; not validated</span></td></tr><tr><td>Any deployment to OpenShift on IBM Z</td><td>No s390x environment</td><td><span class="status-no">&#x26A0; not validated</span></td></tr><tr><td>Running the s390x image</td><td>Skipped on request; only built as part of the manifest list</td><td><span class="status-no">&#x26A0; not validated</span></td></tr><tr><td>Behaviour against a real Db2 (LUW or z/OS)</td><td>Unit tests mock JDBC; DDL was not executed. <code>/health/ready</code> was only seen failing</td><td><span class="status-no">&#x26A0; not validated</span></td></tr><tr><td><code>kubernetes.core</code> apply, wait and <code>k8s_rollback</code> behaviour</td><td>Syntax and lint only</td><td><span class="status-no">&#x26A0; not validated</span></td></tr><tr><td>Roles <code>dlis_images</code>, <code>dlis_database</code>, <code>dlis_verify</code></td><td>Never executed; images role needs podman, skopeo and qemu on the pipeline host</td><td><span class="status-no">&#x26A0; not validated</span></td></tr><tr><td>Service-to-service calls and the payment saga end to end</td><td>Covered by unit tests with mocked gateways only; not run across running services</td><td><span class="status-no">&#x26A0; not validated</span></td></tr><tr><td>Image build of licensing/payment (only candidate was built), performance, load and failover</td><td>Out of scope for this task</td><td><span class="status-no">&#x26A0; not validated</span></td></tr></tbody></table>
+</div>
+
+<div class="section">
+  <h2>Risks and recommended next steps</h2>
+  <ul class="tight">
+    <li>Run <code>render.yml</code> (offline), then <code>site.yml --tags deploy,verify</code> against a non-production x86 cluster first; then the Z cluster. Fix whatever the first live run reveals.</li>
+    <li><code>db2jcc4.jar</code> is staged by Maven from the dependency declared in the service POMs; confirm that the driver version suits both Db2 LUW and Db2 for z/OS in your build environment.</li>
+    <li>The demo <code>basicRegistry</code> users should be replaced by LDAP (or SAF on Z) before production.</li>
+    <li>Services share one Db2 schema with the legacy modules; ownership is by convention, not enforced by grants. Create per-service Db2 users with table-level grants.</li>
+    <li>The payment saga is synchronous with a compensating rollback only on the payment side; add a retry/outbox if licensing downtime must not fail payments.</li>
+    <li>Cut over traffic gradually (Route weights or the gateway) and keep the monolith and CICS bridge until the services are proven.</li>
+    <li>Keep the vault file encrypted; <code>inventories/example/.../vault.yml</code> contains dummy values only.</li>
+  </ul>
+</div>
+
+<div class="section">
+  <h2>Files created or changed</h2>
+  <table><thead><tr><th>Path</th><th>Content</th></tr></thead><tbody><tr><td><code>pom.xml</code></td><td>new modules, managed dependencies and versions</td></tr><tr><td><code>dlis-service-commons/</code></td><td>shared library and 23 tests</td></tr><tr><td><code>dlis-candidate-service/</code>, <code>dlis-licensing-service/</code>, <code>dlis-payment-service/</code></td><td>code, tests, <code>server.xml</code>, <code>jvm.options</code>, <code>web.xml</code>, Dockerfile, DDL</td></tr><tr><td><code>deploy/ansible/</code></td><td>playbooks, roles, templates, example inventory, README, lint configuration</td></tr><tr><td><code>README.md</code>, <code>.gitignore</code></td><td>new section; ignore rules for rendered manifests</td></tr><tr><td><code>reports/05-liberty-openshift-modernization.html</code></td><td>this report (also on <code>main</code>)</td></tr><tr><td>Unchanged</td><td><code>dlis-core</code>, <code>dlis-web</code>, <code>dlis-ear</code>, <code>dlis-cics-bridge</code>, root <code>Dockerfile</code>, <code>build.sh</code> (legacy path)</td></tr></tbody></table>
+</div>
+
+<footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>
