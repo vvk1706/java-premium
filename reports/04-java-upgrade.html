@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Java Upgrade Report — Upgrade to Java 17</title>
+  <style>
+    :root {
+      --bg-color: #ffffff;
+      --surface-color: #f7f8fa;
+      --border-color: #e5e7eb;
+      --text-color: #1f2328;
+      --muted-color: #57606a;
+      --accent-color: #3b82d4;
+      --success-color: #1a7f37;
+      --success-bg: #dafbe1;
+      --code-bg: #f6f8fa;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--bg-color);
+      margin: 0;
+      padding: 32px 16px;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 20px;
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 8px 0;
+      color: var(--text-color);
+    }
+
+    .subtitle {
+      color: var(--muted-color);
+      font-size: 14px;
+      margin: 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 3px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 12px;
+      background-color: var(--success-bg);
+      color: var(--success-color);
+      margin-top: 8px;
+    }
+
+    .section {
+      margin-bottom: 28px;
+    }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0 0 12px 0;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .meta-card {
+      background-color: var(--surface-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px;
+    }
+
+    .meta-label {
+      font-size: 12px;
+      color: var(--muted-color);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .meta-value {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    ol.steps-list {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    ol.steps-list > li {
+      margin-bottom: 16px;
+    }
+
+    .step-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .step-desc {
+      color: var(--text-color);
+      margin-bottom: 8px;
+    }
+
+    pre, code {
+      font-family: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+      font-size: 12px;
+    }
+
+    code {
+      background-color: var(--code-bg);
+      padding: 2px 5px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+    }
+
+    pre {
+      background-color: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 12px;
+      overflow-x: auto;
+      margin: 8px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      font-size: 13px;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 8px 12px;
+      border: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: var(--surface-color);
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) td {
+      background-color: #fafbfc;
+    }
+
+    .status-ok {
+      color: var(--success-color);
+      font-weight: 600;
+    }
+
+    footer {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+      text-align: center;
+      font-size: 12px;
+      color: var(--muted-color);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Java Upgrade Report — Java 17 Upgrade</h1>
+      <p class="subtitle">Driver License Issuance System (DLIS) Modernization</p>
+      <span class="badge">BUILD SUCCESS &bull; ALL TESTS PASSED</span>
+    </header>
+
+    <div class="section">
+      <h2>Upgrade Overview</h2>
+      <div class="meta-grid">
+        <div class="meta-card">
+          <div class="meta-label">Git Branch</div>
+          <div class="meta-value">upgrade-to-java-17</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Source Java Version</div>
+          <div class="meta-value">Java 11</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Target Java Version</div>
+          <div class="meta-value">Java 17</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">SDKMAN Dependency</div>
+          <div class="meta-value">None (Direct JDK / Maven)</div>
+        </div>
+      </div>
+      <p>
+        The project was successfully upgraded from Java 11 to Java 17 on the isolated Git branch <code>upgrade-to-java-17</code>. 
+        Compilation target, language source level, and javac release flags were aligned across all modules. 
+        All unit tests, packaging steps (JAR, WAR, EAR), and JaCoCo coverage reports executed and verified with zero errors.
+      </p>
+    </div>
+
+    <div class="section">
+      <h2>Performed Steps</h2>
+      <ol class="steps-list">
+        <li>
+          <div class="step-title">1. Branch Creation</div>
+          <div class="step-desc">
+            Created and checked out a dedicated working branch to keep all Java 17 upgrade changes isolated from <code>main</code>:
+          </div>
+          <pre>git checkout -b upgrade-to-java-17</pre>
+        </li>
+        <li>
+          <div class="step-title">2. Build Baseline & POM Analysis</div>
+          <div class="step-desc">
+            Inspected the multi-module Maven structure (<code>dlis-parent</code>, <code>dlis-core</code>, <code>dlis-cics-bridge</code>, <code>dlis-web</code>, <code>dlis-ear</code>) and verified compiler properties and plugin dependencies.
+          </div>
+        </li>
+        <li>
+          <div class="step-title">3. Maven Configuration Updates (pom.xml)</div>
+          <div class="step-desc">
+            Updated the root <code>pom.xml</code> properties and compiler plugin definitions to target Java 17:
+          </div>
+          <pre>&lt;properties&gt;
+  &lt;java.version&gt;17&lt;/java.version&gt;
+  &lt;maven.compiler.source&gt;17&lt;/maven.compiler.source&gt;
+  &lt;maven.compiler.target&gt;17&lt;/maven.compiler.target&gt;
+  &lt;maven.compiler.release&gt;17&lt;/maven.compiler.release&gt;
+  ...
+&lt;/properties&gt;
+
+&lt;plugin&gt;
+  &lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+  &lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+  &lt;version&gt;3.13.0&lt;/version&gt;
+  &lt;configuration&gt;
+    &lt;release&gt;17&lt;/release&gt;
+  &lt;/configuration&gt;
+&lt;/plugin&gt;</pre>
+        </li>
+        <li>
+          <div class="step-title">4. Build & Test Verification</div>
+          <div class="step-desc">
+            Executed a full clean build and verification cycle using Maven:
+          </div>
+          <pre>mvn clean verify</pre>
+          <div class="step-desc">
+            All sources compiled with <code>javac [debug release 17]</code>, all tests passed, and all artifacts (<code>.jar</code>, <code>.war</code>, <code>.ear</code>) and aggregate JaCoCo coverage reports were generated successfully.
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <div class="section">
+      <h2>Module Verification Summary</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Module</th>
+            <th>Type</th>
+            <th>Tests Run</th>
+            <th>Failures / Errors</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>dlis-parent</code></td>
+            <td>POM</td>
+            <td>N/A</td>
+            <td>0 / 0</td>
+            <td><span class="status-ok">&#x2714; SUCCESS</span></td>
+          </tr>
+          <tr>
+            <td><code>dlis-core</code></td>
+            <td>JAR</td>
+            <td>187</td>
+            <td>0 / 0</td>
+            <td><span class="status-ok">&#x2714; SUCCESS</span></td>
+          </tr>
+          <tr>
+            <td><code>dlis-cics-bridge</code></td>
+            <td>JAR</td>
+            <td>25</td>
+            <td>0 / 0</td>
+            <td><span class="status-ok">&#x2714; SUCCESS</span></td>
+          </tr>
+          <tr>
+            <td><code>dlis-web</code></td>
+            <td>WAR</td>
+            <td>0</td>
+            <td>0 / 0</td>
+            <td><span class="status-ok">&#x2714; SUCCESS</span></td>
+          </tr>
+          <tr>
+            <td><code>dlis-ear</code></td>
+            <td>EAR</td>
+            <td>N/A (Aggregate Report)</td>
+            <td>0 / 0</td>
+            <td><span class="status-ok">&#x2714; SUCCESS</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <footer>
+      Made with IBM Bob
+    </footer>
+  </div>
+</body>
+</html>
