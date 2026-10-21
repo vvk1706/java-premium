@@ -21,12 +21,11 @@ import javax.inject.Inject;
  *   APHC — perform history check
  *   APIS — inquire application status
  */
-public class DlisApplProgram implements Executable {
+public class DlisApplProgram {
 
     @Inject
     private ApplicationService applicationService;
 
-    @Override
     public void execute(CommAreaHolder commArea) throws InvalidRequestException {
         ApplicationCommarea ca = new ApplicationCommarea();
         if (commArea != null && commArea.getValue() != null) {

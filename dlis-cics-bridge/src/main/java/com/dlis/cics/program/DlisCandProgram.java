@@ -18,15 +18,14 @@ import java.time.format.DateTimeFormatter;
  * Receives a CandidateCommarea, dispatches to CandidateService,
  * fills the response in the same COMMAREA and returns.
  *
- * This class is a JCICS MainProgram — it implements Executable and is
- * called by CICS via EXEC CICS LINK PROGRAM('DLISCAND').
+ * This class is a JCICS main program, called
+ * by CICS via EXEC CICS LINK PROGRAM('DLISCAND').
  */
-public class DlisCandProgram implements Executable {
+public class DlisCandProgram {
 
     @Inject
     private CandidateService candidateService;
 
-    @Override
     public void execute(CommAreaHolder commArea) throws InvalidRequestException {
 
         CandidateCommarea ca = new CandidateCommarea();

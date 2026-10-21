@@ -117,7 +117,7 @@ public class CandidateResource {
     private static <T> Response errorResponse(ServiceResult<T> r) {
         int httpStatus = r.getReturnCode() == ServiceResult.RC_NOT_FOUND
                 ? Response.Status.NOT_FOUND.getStatusCode()
-                : Response.Status.UNPROCESSABLE_ENTITY.getStatusCode();
+                : 422;
         return Response.status(httpStatus)
                 .entity("{\"returnCode\":" + r.getReturnCode()
                         + ",\"message\":\"" + r.getMessage().replace("\"", "'") + "\"}")

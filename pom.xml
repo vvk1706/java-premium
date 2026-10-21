@@ -24,19 +24,20 @@
   </modules>
 
   <properties>
-    <java.version>11</java.version>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
+    <java.version>17</java.version>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <maven.compiler.release>17</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <!-- IBM JCICS / WAS Liberty BOM versions (available from IBM Maven repo) -->
-    <ibm.jcics.version>2.0.0</ibm.jcics.version>
+    <ibm.jcics.version>2.000.0-6.1</ibm.jcics.version>
     <liberty.bom.version>23.0.0.9</liberty.bom.version>
     <jakartaee.version>8.0.0</jakartaee.version>
     <db2.jdbc.version>11.5.8.0</db2.jdbc.version>
     <slf4j.version>2.0.9</slf4j.version>
     <junit.version>5.10.0</junit.version>
-    <mockito.version>5.5.0</mockito.version>
+    <mockito.version>5.24.0</mockito.version>
     <jacoco.version>0.8.15</jacoco.version>
   </properties>
 
@@ -109,6 +110,14 @@
   <build>
     <pluginManagement>
       <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.13.0</version>
+          <configuration>
+            <release>17</release>
+          </configuration>
+        </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>

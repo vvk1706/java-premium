@@ -1,0 +1,51 @@
+Java Upgrade
+
+Analyze Project
+I will analyze the current state of your Java project to tailor the modernization workflow.
+Select Project
+*
+
+/Users/valerykornienko/workspace/java-premium
+Custom project path
+Provide a custom path to the project
+
+Custom build command
+Provide your custom build command for the project
+
+
+
+
+
+
+Upgrade from Java 8 or 11 to modern versions (17, 21, or 25) with AI-driven validation and agentic fixes.
+
+
+Let's analyze the project environment first.
+
+
+I'm preparing modernization recommendations in the background.
+
+I will perform an initial build now and see if there are any issues in the project.
+
+Yes, we can perform the Java upgrade directly without SDKMAN.
+
+We can:
+
+Update the Java compiler versions, target versions, plugins, and dependencies directly in pom.xml across the project modules.
+Build, test, and validate using your installed JDK(s) or standard Maven commands (mvn clean install / mvn test).
+Migrate code syntax, APIs, EE/Jakarta dependencies, or build configurations to target your desired Java version (such as Java 17, Java 21, or Java 25).
+Which target Java version would you like to upgrade this project to (e.g., Java 17, Java 21, or Java 25)?
+
+
+Java 17, please keep it as separate branch
+
+Tools awaiting approval:
+Update Todo List
+Edit
+Create a new Git branch for the Java 17 upgrade
+Establish initial build baseline and inspect all pom.xml files
+Update Maven properties and compiler plugins to target Java 17
+Upgrade dependencies / plugins if required for Java 17 compatibility
+Compile, run tests, and fix any build or runtime issues
+Validate the full build across all modules
+

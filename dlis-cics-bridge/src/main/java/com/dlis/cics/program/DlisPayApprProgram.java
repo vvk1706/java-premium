@@ -41,14 +41,13 @@ import java.util.Arrays;
  *   Offset 493: 50  ISSUED-BY-OFFICER
  *   Total = 543 bytes (padded to even)
  */
-public class DlisPayApprProgram implements Executable {
+public class DlisPayApprProgram {
 
     @Inject private PaymentService  paymentService;
     @Inject private ApprovalService approvalService;
 
     private static final int BUF_SIZE = 544;
 
-    @Override
     public void execute(CommAreaHolder commArea) throws InvalidRequestException {
         byte[] raw = new byte[BUF_SIZE];
         if (commArea != null && commArea.getValue() != null) {

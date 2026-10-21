@@ -30,7 +30,7 @@ public abstract class BaseCommarea implements Serializable {
 
     protected static byte[] encodeString(String value, int length) {
         byte[] buf = new byte[length];
-        Arrays.fill(buf, (byte) 0x40); // EBCDIC space
+        Arrays.fill(buf, (byte) 0x20); // space (ISO-8859-1)
         if (value != null) {
             byte[] src = value.getBytes(StandardCharsets.ISO_8859_1);
             System.arraycopy(src, 0, buf, 0, Math.min(src.length, length));
